@@ -545,102 +545,152 @@ async function generatePoster() {
   }));
 
   const W = 1080;
-  const PAD = 72;
-  const COL_W = (W - PAD * 2 - 32) / 2; // two columns with 32px gap
-  const IMG_H = 280;
-  const ROW_GAP = 48;
-  const TITLE_AREA = 200;
+  const PAD = 80;
+  const IMG_W = W - PAD * 2;
+  const IMG_H = 380;
+  const TEXT_GAP = 28;
+  const LINE_H = 30;
+  const SCENE_GAP = 56;
+  const TITLE_AREA = 180;
   const FOOTER_AREA = 100;
-  const rows = Math.ceil(scenes.length / 2);
-  const H = TITLE_AREA + rows * (IMG_H + 100) + (rows - 1) * ROW_GAP + FOOTER_AREA;
+  const maxLineW = IMG_W - 32;
+
+  // Word wrap helper
+  function wrapText(ctx, text, maxW) {
+    const wrapped = [];
+    // Try splitting by Chinese comma/period first, then by word
+    const isChinese = /[\u4e00-\u9fff]/.test(text);
+    if (isChinese) {
+      let remaining = text;
+      while (remaining && ctx.measureText(remaining).width > maxW) {
+        let cut = remaining.length;
+        while (cut > 1 && ctx.measureText(remaining.slice(0, cut)).width > maxW) cut--;
+        wrapped.push(remaining.slice(0, cut));
+        remaining = remaining.slice(cut);
+      }
+      if (remaining) wrapped.push(remaining);
+    } else {
+      const words = text.split(' ');
+      let line = '';
+      words.forEach(word => {
+        const test = line ? line + ' ' + word : word;
+        if (ctx.measureText(test).width > maxW && line) {
+          wrapped.push(line);
+          line = word;
+        } else {
+          line = test;
+        }
+      });
+      if (line) wrapped.push(line);
+    }
+    return wrapped;
+  }
+
+  // Pre-calculate wrapped lines for height calculation
+  const tempCanvas = document.createElement('canvas');
+  const tempCtx = tempCanvas.getContext('2d');
+  tempCtx.font = '20px "EB Garamond", "Noto Serif SC", serif';
+
+  const wrappedScenes = scenes.map(scene => {
+    const allWrapped = [];
+    (scene.lines || []).forEach(line => {
+      wrapText(tempCtx, line, maxLineW).forEach(wl => allWrapped.push(wl));
+    });
+    return allWrapped;
+  });
+
+  // Calculate total height
+  let totalH = TITLE_AREA;
+  wrappedScenes.forEach(lines => {
+    totalH += IMG_H + TEXT_GAP + lines.length * LINE_H + SCENE_GAP;
+  });
+  totalH += FOOTER_AREA - SCENE_GAP;
 
   const canvas = document.createElement('canvas');
-  canvas.width = W; canvas.height = H;
+  canvas.width = W; canvas.height = totalH;
   const ctx = canvas.getContext('2d');
 
-  // Background — warm dark with subtle gradient
-  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  // Background
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, totalH);
   bgGrad.addColorStop(0, '#1c1b18');
   bgGrad.addColorStop(1, '#141310');
   ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillRect(0, 0, W, totalH);
 
   // Title
   ctx.fillStyle = '#e8e0d4';
   ctx.font = '56px "Ma Shan Zheng", serif';
   ctx.textAlign = 'center';
-  ctx.fillText(dreamTitle, W / 2, 100);
+  ctx.fillText(dreamTitle, W / 2, 88);
 
   // Subtitle
-  ctx.fillStyle = 'rgba(232,224,212,.25)';
-  ctx.font = 'italic 15px "Cormorant Garamond", serif';
-  ctx.fillText('A DREAM VISUALIZED', W / 2, 135);
+  ctx.fillStyle = 'rgba(232,224,212,.2)';
+  ctx.font = 'italic 14px "Cormorant Garamond", serif';
+  ctx.fillText('A DREAM VISUALIZED', W / 2, 120);
 
-  // Thin divider
-  ctx.strokeStyle = 'rgba(232,224,212,.1)';
+  // Vertical divider
+  ctx.strokeStyle = 'rgba(232,224,212,.08)';
   ctx.lineWidth = 0.5;
-  ctx.beginPath(); ctx.moveTo(W/2-30, 158); ctx.lineTo(W/2+30, 158); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W/2, 140); ctx.lineTo(W/2, 160); ctx.stroke();
 
-  // Scenes — 2-column grid, image on top, text below
+  // Scenes — single column, image + text below
+  let y = TITLE_AREA;
   scenes.forEach((scene, i) => {
-    const col = i % 2;
-    const row = Math.floor(i / 2);
-    const x = PAD + col * (COL_W + 32);
-    const blockY = TITLE_AREA + row * (IMG_H + 100 + ROW_GAP);
     const img = sceneImages[i];
 
-    // Image
+    // Image with rounded corners
     if (img) {
       ctx.save();
       ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(x, blockY, COL_W, IMG_H, 10);
-      else ctx.rect(x, blockY, COL_W, IMG_H);
+      if (ctx.roundRect) ctx.roundRect(PAD, y, IMG_W, IMG_H, 12);
+      else ctx.rect(PAD, y, IMG_W, IMG_H);
       ctx.clip();
-      const scale = Math.max(COL_W / img.width, IMG_H / img.height);
-      ctx.drawImage(img, x + (COL_W - img.width*scale)/2, blockY + (IMG_H - img.height*scale)/2, img.width*scale, img.height*scale);
+      const scale = Math.max(IMG_W / img.width, IMG_H / img.height);
+      const sw = img.width * scale, sh = img.height * scale;
+      ctx.drawImage(img, PAD + (IMG_W - sw)/2, y + (IMG_H - sh)/2, sw, sh);
       ctx.restore();
+
+      // Soft gradient at bottom of image
+      const grad = ctx.createLinearGradient(0, y + IMG_H - 80, 0, y + IMG_H);
+      grad.addColorStop(0, 'rgba(28,27,24,0)');
+      grad.addColorStop(1, 'rgba(28,27,24,0.3)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(PAD, y + IMG_H - 80, IMG_W, 80);
     } else {
-      ctx.fillStyle = 'rgba(232,224,212,.04)';
-      if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, blockY, COL_W, IMG_H, 10); ctx.fill(); }
-      else { ctx.fillRect(x, blockY, COL_W, IMG_H); }
+      ctx.fillStyle = 'rgba(232,224,212,.03)';
+      ctx.fillRect(PAD, y, IMG_W, IMG_H);
     }
 
-    // Scene number
-    ctx.fillStyle = 'rgba(232,224,212,.18)';
+    y += IMG_H + TEXT_GAP;
+
+    // Scene number + text
+    ctx.fillStyle = 'rgba(232,224,212,.15)';
     ctx.font = 'italic 12px "Cormorant Garamond", serif';
     ctx.textAlign = 'left';
-    ctx.fillText(String(i+1).padStart(2,'0'), x, blockY + IMG_H + 20);
+    ctx.fillText(String(i+1).padStart(2,'0'), PAD, y);
 
-    // Text lines
     ctx.fillStyle = 'rgba(232,224,212,.6)';
-    ctx.font = '16px "EB Garamond", "Noto Serif SC", serif';
-    const lines = scene.lines || [];
-    const maxLineW = COL_W - 24;
+    ctx.font = '20px "EB Garamond", "Noto Serif SC", serif';
+    const lines = wrappedScenes[i];
     lines.forEach((line, li) => {
-      if (li > 2) return; // max 3 lines per scene on poster
-      const y = blockY + IMG_H + 20 + li * 26;
-      if (ctx.measureText(line).width > maxLineW) {
-        let t = line;
-        while (ctx.measureText(t+'…').width > maxLineW && t.length > 10) t = t.slice(0,-1);
-        ctx.fillText(t+'…', x + 20, y);
-      } else {
-        ctx.fillText(line, x + 20, y);
-      }
+      ctx.fillText(line, PAD + 28, y + li * LINE_H);
     });
+
+    y += lines.length * LINE_H + SCENE_GAP;
   });
 
   // Footer
-  const footerY = H - FOOTER_AREA + 20;
+  const footerY = totalH - FOOTER_AREA + 20;
   ctx.strokeStyle = 'rgba(232,224,212,.06)';
   ctx.lineWidth = 0.5;
   ctx.beginPath(); ctx.moveTo(PAD, footerY); ctx.lineTo(W-PAD, footerY); ctx.stroke();
 
   const labels = { watercolor:'水彩 Watercolor', dreamcore:'梦核 Dreamcore', inkwash:'水墨 Ink Wash', pixel:'像素 Pixel Art', ghibli:'吉卜力 Ghibli', pencil:'素描 Pencil' };
-  ctx.fillStyle = 'rgba(232,224,212,.25)';
+  ctx.fillStyle = 'rgba(232,224,212,.2)';
   ctx.font = 'italic 14px "Cormorant Garamond", serif';
   ctx.textAlign = 'center';
   ctx.fillText(labels[selectedStyle] || selectedStyle, W/2, footerY + 35);
-  ctx.fillStyle = 'rgba(232,224,212,.12)';
+  ctx.fillStyle = 'rgba(232,224,212,.1)';
   ctx.font = '12px "Cormorant Garamond", serif';
   ctx.fillText('梦境画卷 · DREAMSCAPE', W/2, footerY + 58);
 
