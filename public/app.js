@@ -1,0 +1,802 @@
+// ═══════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════
+// API key is stored server-side in Vercel environment variables
+
+const STYLE_SUFFIXES = {
+  watercolor: ', abstract watercolor painting, loose expressive washes bleeding into each other, visible paper texture, unfinished edges fading into white, emotional color fields, Turner-esque atmosphere, impressionistic not literal, soft focus, no photorealism, no text, no frame',
+  dreamcore: ', abstract dreamcore art, impossible geometry, objects dissolving into mist, soft neon halos, liminal negative space, things half-formed and shifting, Magritte meets Remedios Varo, surreal emotional landscape, not photographic, no text, no frame',
+  inkwash: ', abstract Chinese ink wash painting, bold single-stroke gestures, vast empty space, ink bleeding and pooling on wet rice paper, qi yun sheng dong, suggestion over depiction, Bada Shanren minimalism, monochrome with subtle ink gradations, no text, no frame',
+  pixel: ', abstract pixel art, limited 32-color palette, impressionistic pixel clusters, dithering patterns creating depth, dream-like scene dissolving at edges, Superbrothers art style, emotional atmosphere over detail, no text, no frame',
+  ghibli: ', Studio Ghibli anime style, warm hand-painted background art, lush green landscapes, soft cel shading, Hayao Miyazaki aesthetic, golden afternoon light, detailed clouds and foliage, gentle and nostalgic atmosphere, animated film still, no text, no frame',
+  pencil: ', pencil sketch on cream paper, delicate graphite hatching and cross-hatching, visible paper grain, loose expressive line work, areas left unfinished fading into blank paper, chiaroscuro light and shadow, hand-drawn illustration feel, no text, no frame',
+};
+
+const PLACEHOLDERS = [
+  '我梦见自己走在一片花海中，远处有座老房子，烟囱在冒烟…',
+  'I dreamt of standing on a mountaintop, looking down at a still lake in the fog…',
+  '梦里下着大雨，雨停后我看到一棵巨大的树，树下有只鹿在休息…',
+  'There was an old tree in a golden field, and fireflies were rising from the grass…',
+  '我梦见自己在一座空荡荡的图书馆里，书本自己飞起来…',
+  'I was walking through a city made entirely of glass, and the sky was purple…',
+];
+
+const LOADING_MESSAGES = [
+  ['梦的轮廓浮现…', 'shapes emerging from the mist…'],
+  ['色彩在蔓延…', 'colors bleeding through…'],
+  ['光线穿过云层…', 'light breaking through clouds…'],
+  ['记忆在重组…', 'memories reassembling…'],
+  ['远处传来回响…', 'echoes from the distance…'],
+  ['梦境即将完整…', 'the dream is almost whole…'],
+];
+
+const FALLBACK_PROMPTS = {
+  tree: 'warm ochre light dissolving upward into deep teal, a dark branching form reaching through golden haze, roots merging with earth tones below',
+  mountain: 'layered horizontal bands of indigo and slate blue fading into pale mist, a thin bright line of light along a distant ridge, vast empty space',
+  flowers: 'soft explosions of rose and coral floating in pale cream void, scattered petal-like forms drifting, warm light filtering through translucent shapes',
+  water: 'deep still blue-green expanse with a single bright reflection, horizontal calm, a small dark form floating in luminous space',
+  night: 'deep prussian blue field with scattered points of warm amber light, a large pale circular glow, darkness that feels like velvet',
+  forest: 'vertical dark forms with scattered gold light breaking through, emerald and shadow layered deeply, a bright opening in the distance',
+  field: 'vast horizontal golden warmth stretching to a thin sky edge, rippling texture suggesting wind, light dissolving into haze at the horizon',
+  rain: 'vertical silver-grey streaks over muted earth tones, scattered bright reflections below, soft diffused light through cloud layer',
+  house: 'a small warm amber rectangle glowing in surrounding dark cool tones, suggestion of smoke rising into indigo, a path of warm light',
+  sky: 'enormous cloud forms in copper and rose gold, deep blue spaces between, light breaking through in dramatic shafts',
+};
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let selectedStyle = 'watercolor';
+let dreamTitle = '';
+let visualThread = '';
+let scenes = [];
+let currentScene = -1;
+let currentLine = 0;
+let isPlaying = true;
+let lineTimer = null;
+let sceneTimer = null;
+let useLayerA = true;
+let brushAnimId = null;
+const imageLoadPromises = {};
+
+// ═══════════════════════════════════════════════════════════
+// DOM REFS
+// ═══════════════════════════════════════════════════════════
+const dreamInput = document.getElementById('dream-input');
+const beginBtn = document.getElementById('begin-btn');
+const brushCanvas = document.getElementById('brush-canvas');
+const brushCtx = brushCanvas.getContext('2d');
+
+// ═══════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════
+function $(id) { return document.getElementById(id); }
+function easeInOut(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2; }
+
+function showPhase(id) {
+  document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
+  $(id).classList.add('active');
+  const isCinematic = id === 'cinematic-phase';
+  document.body.style.overflow = isCinematic ? 'hidden' : '';
+}
+
+function setLoadingProgress(step, detail, pct) {
+  $('loading-step').textContent = step;
+  $('loading-detail').textContent = detail;
+  if (pct !== undefined) {
+    const offset = 264 - (264 * pct / 100);
+    $('loading-ring').style.strokeDashoffset = offset;
+    $('loading-pct').textContent = Math.round(pct) + '%';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// API: IMAGE GENERATION (Imagen 4.0)
+// ═══════════════════════════════════════════════════════════
+async function generateImage(prompt, retries = 2) {
+  const suffix = STYLE_SUFFIXES[selectedStyle] || STYLE_SUFFIXES.watercolor;
+  const fullPrompt = (visualThread ? visualThread + '. ' : '') + prompt + suffix;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const resp = await fetch('/api/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instances: [{ prompt: fullPrompt }],
+          parameters: { sampleCount: 1, aspectRatio: '16:9' },
+        }),
+      });
+      if (resp.status === 429) {
+        await new Promise(r => setTimeout(r, (attempt + 1) * 5000));
+        continue;
+      }
+      if (!resp.ok) throw new Error('Imagen API error: ' + resp.status);
+      const data = await resp.json();
+      const b64 = data.predictions?.[0]?.bytesBase64Encoded;
+      if (!b64) throw new Error('No image in response');
+      return 'data:image/png;base64,' + b64;
+    } catch (e) {
+      if (attempt === retries) throw e;
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// API: STORY GENERATION (Gemini)
+// ═══════════════════════════════════════════════════════════
+async function generateStory(dreamText) {
+  const sysPrompt = `You are a dream storyteller. The user describes a dream. You retell it as a gentle, immersive short story — like a picture book for adults. Respond ONLY with a JSON object (no markdown, no backticks).
+
+{
+  "title": "short evocative title (match user's language)",
+  "visual_thread": "A consistent ENGLISH visual description that unifies ALL scenes — describe a shared color palette, lighting mood, recurring visual motif, and atmosphere. Example: 'soft golden hour light, muted warm tones with teal shadows, recurring motif of floating dust particles, everything slightly hazy as if seen through old glass'",
+  "scenes": [
+    {
+      "lines": ["story sentence 1", "story sentence 2", "story sentence 3", "story sentence 4"],
+      "image_prompt": "ENGLISH scene-specific visual description for an artist — what is in this particular scene? Describe the key subject, composition, and unique details of THIS scene."
+    }
+  ]
+}
+
+Rules:
+- Exactly 6 scenes
+- 3-5 sentences per scene. Write like a storyteller: warm, unhurried, gently descriptive. Not poetry — narrative. Like someone softly telling you what they saw in a dream. Use sensory details (sounds, smells, textures).
+- The story should flow naturally from scene to scene — each one moves the dream forward
+- visual_thread: describe the SHARED visual identity across all scenes (color palette, light quality, atmosphere, a recurring element like fog/particles/light rays). This will be prepended to every image prompt to ensure visual coherence.
+- image_prompt: ENGLISH, describe what's IN this specific scene. Focus on subject, composition, spatial arrangement. Keep it complementary to visual_thread (don't repeat atmosphere — focus on what's unique to this scene).
+- Match user's language for title and lines. Write naturally — not overly literary, not flat. Like a good bedtime story.
+- ONLY output valid JSON, nothing else`;
+
+  const resp = await fetch('/api/story', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: sysPrompt + '\n\nUser dream: ' + dreamText.trim() }] }],
+      generationConfig: { temperature: 0.9, maxOutputTokens: 8000 },
+    }),
+  });
+  if (!resp.ok) throw new Error('Gemini API error: ' + resp.status);
+  const data = await resp.json();
+  const parts = data.candidates?.[0]?.content?.parts || [];
+  const text = parts.map(p => p.text || '').join('');
+  let cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+  const jsonStart = cleaned.indexOf('{');
+  if (jsonStart > 0) cleaned = cleaned.slice(jsonStart);
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    let repaired = cleaned.replace(/,?\s*"[^"]*$/, '').replace(/,\s*$/, '');
+    const opens = (repaired.match(/\[/g) || []).length - (repaired.match(/\]/g) || []).length;
+    const braces = (repaired.match(/\{/g) || []).length - (repaired.match(/\}/g) || []).length;
+    for (let i = 0; i < opens; i++) repaired += ']';
+    for (let i = 0; i < braces; i++) repaired += '}';
+    const script = JSON.parse(repaired);
+    if (!script?.title || !script?.scenes?.length) throw new Error('Invalid response');
+    return script;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOCAL FALLBACK
+// ═══════════════════════════════════════════════════════════
+function detectThemes(text) {
+  const kw = text.toLowerCase();
+  const themes = [];
+  const rules = [
+    [/树|tree|oak|松|柏/, 'tree'], [/山|mountain|hill|峰/, 'mountain'],
+    [/花|flower|blossom|garden|玫瑰|薰衣草/, 'flowers'],
+    [/水|water|ocean|sea|lake|河|湖|溪/, 'water'],
+    [/夜|night|月|moon|星|star/, 'night'], [/森林|forest|jungle|woods/, 'forest'],
+    [/田|field|草|grass|meadow|麦/, 'field'], [/雨|rain|storm/, 'rain'],
+    [/房|house|home|屋|cottage/, 'house'], [/云|cloud|天空|sky|飞|fly/, 'sky'],
+  ];
+  rules.forEach(([re, t]) => { if (re.test(kw) && !themes.includes(t)) themes.push(t); });
+  if (!themes.length) themes.push('sky', 'tree', 'water');
+  const all = Object.keys(FALLBACK_PROMPTS);
+  while (themes.length < 6) themes.push(all[Math.floor(Math.random() * all.length)]);
+  return themes.slice(0, 6);
+}
+
+function localFallback(dreamText) {
+  const isCN = /[\u4e00-\u9fff]/.test(dreamText);
+  const themes = detectThemes(dreamText);
+  const stories = isCN ? [
+    ['梦开始的时候，四周一片安静。', '我站在一条没有尽头的路上，身后是晨雾，前方是光。', '空气里有花和泥土的气味，像极了小时候外婆家的清晨。', '我不知道要去哪里，但脚步很轻。'],
+    ['不知道走了多久，路边出现了一棵很老很老的树。', '树冠大得像一把撑开的伞，树下有人留下的石凳。', '上面落满了金色的叶子，我坐下来，风刚好吹过。', '好像所有的时间都停在了这一刻。'],
+    ['我听见水声，循着声音走去。', '一片湖安静地躺在山谷中间，湖面上有一条小船。', '没有人划，它自己在慢慢漂。', '我突然觉得，这个地方我来过。'],
+    ['花是突然出现的，先是脚边冒出一朵两朵。', '然后是一整片一整片地开放，红的、粉的、白的。', '多到我只能站在原地，让它们从身边长过去。', '风把花瓣吹到了我的头发上。'],
+    ['天暗了下来，但不是那种让人害怕的暗。', '月亮又大又圆，照得每一片叶子都在发光。', '远处传来很轻很轻的音乐，像有人在哼歌。', '我躺在草地上，决定不走了。'],
+    ['远处有一栋小房子，窗户里透出暖黄色的光。', '烟囱里飘出淡淡的烟，门开着，好像在等人。', '我走过去推开篱笆门，院子里种满了花。', '屋里传来碗碟的声音，我忽然想起了一些很久没想的事。'],
+  ] : [
+    ['The dream began in silence.', 'I stood on a path that stretched endlessly — mist behind me, light ahead.', 'The air smelled of flowers and damp earth, like my grandmother\'s garden at dawn.', 'I didn\'t know where I was going, but my steps felt effortless.'],
+    ['I walked for what felt like hours. Then a tree appeared — ancient and enormous.', 'Its canopy spread like an umbrella for the sky. A stone bench sat beneath it.', 'Covered in golden leaves. I sat down. The wind passed through.', 'Everything went perfectly still.'],
+    ['I followed the sound of water until a lake appeared.', 'It lay perfectly still in a valley. A small boat drifted across the surface.', 'No one was rowing — it moved on its own, unhurried.', 'I had the strangest feeling I\'d been here before.'],
+    ['The flowers came without warning — first one or two near my feet.', 'Then they spread everywhere: red, pink, white, an entire field blooming at once.', 'I could only stand still and let them rise around me.', 'Petals lifted into my hair. Everything was perfectly quiet.'],
+    ['The sky darkened, but gently — not the kind of dark that frightens.', 'A large moon rose, painting every leaf in silver.', 'From somewhere far away came the softest music, like someone humming a lullaby.', 'I lay in the grass and decided to stay.'],
+    ['A small house appeared in the distance, warm light glowing in its windows.', 'Smoke curled from the chimney. The door stood open, as if waiting for me.', 'I walked through the garden gate — flowers everywhere, spilling over the path.', 'Inside, the sound of dishes. I remembered things I\'d long forgotten.'],
+  ];
+  const shuffled = [...stories].sort(() => Math.random() - .5);
+  const titles = isCN
+    ? ['浮光掠影','梦的边境','无名之境','半醒之间','旧梦重温','云深不知处']
+    : ['Fleeting Light','Edge of Dreaming','Unnamed Place','Between Waking','Old Dreams Revisited','Deep in the Clouds'];
+  visualThread = 'soft diffused golden light throughout, muted warm color palette with cool blue-grey shadows, gentle atmospheric haze connecting all elements, consistent dreamy soft-focus quality';
+  return {
+    title: titles[Math.floor(Math.random() * titles.length)],
+    scenes: themes.map((t, i) => ({
+      lines: shuffled[i % shuffled.length],
+      image_prompt: FALLBACK_PROMPTS[t] || FALLBACK_PROMPTS.tree,
+    })),
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// BRUSH REVEAL ENGINE
+// ═══════════════════════════════════════════════════════════
+function resizeBrushCanvas() {
+  brushCanvas.width = window.innerWidth;
+  brushCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeBrushCanvas);
+resizeBrushCanvas();
+
+function bezierPoint(path, t) {
+  const u = 1 - t;
+  return {
+    x: u*u*u*path.startX + 3*u*u*t*path.cp1x + 3*u*t*t*path.cp2x + t*t*t*path.endX,
+    y: u*u*u*path.startY + 3*u*u*t*path.cp1y + 3*u*t*t*path.cp2y + t*t*t*path.endY,
+  };
+}
+
+function generateWashPaths(W, H) {
+  const paths = [];
+  const count = 8 + Math.floor(Math.random() * 4);
+  for (let i = 0; i < count; i++) {
+    const t = i / count;
+    const startY = H * (t * 0.9 + Math.random() * 0.15);
+    const endY = H * (t * 0.9 + (Math.random() - 0.5) * 0.3);
+    paths.push({
+      startX: -W * 0.1, startY,
+      cp1x: W * (0.2 + Math.random() * 0.2), cp1y: startY + (Math.random() - 0.5) * H * 0.3,
+      cp2x: W * (0.6 + Math.random() * 0.2), cp2y: endY + (Math.random() - 0.5) * H * 0.3,
+      endX: W * 1.1, endY,
+      thickness: Math.min(W, H) * (0.12 + Math.random() * 0.18),
+      delay: t * 0.4 + Math.random() * 0.1,
+      speed: 0.7 + Math.random() * 0.4,
+      alpha: 0.15 + Math.random() * 0.1,
+    });
+  }
+  for (let i = 0; i < 4; i++) {
+    const x = W * (0.1 + i * 0.25 + (Math.random() - 0.5) * 0.1);
+    paths.push({
+      startX: x, startY: -H * 0.1,
+      cp1x: x + (Math.random() - 0.5) * W * 0.15, cp1y: H * 0.3,
+      cp2x: x + (Math.random() - 0.5) * W * 0.15, cp2y: H * 0.7,
+      endX: x + (Math.random() - 0.5) * W * 0.1, endY: H * 1.1,
+      thickness: Math.min(W, H) * (0.15 + Math.random() * 0.2),
+      delay: 0.15 + i * 0.12 + Math.random() * 0.08,
+      speed: 0.6 + Math.random() * 0.3,
+      alpha: 0.12 + Math.random() * 0.08,
+    });
+  }
+  return paths;
+}
+
+function drawWashFrame(paths, rawProgress) {
+  const W = brushCanvas.width, H = brushCanvas.height;
+  brushCtx.globalCompositeOperation = 'destination-out';
+  paths.forEach(path => {
+    const pathProgress = Math.max(0, Math.min(1, (rawProgress - path.delay) / (0.5 * path.speed)));
+    if (pathProgress <= 0) return;
+    const steps = Math.floor(easeInOut(pathProgress) * 60);
+    for (let i = 0; i < steps; i++) {
+      const t = i / 60;
+      const pt = bezierPoint(path, t);
+      const r = path.thickness * (Math.sin(t * Math.PI) * 0.6 + 0.4);
+      const grad = brushCtx.createRadialGradient(pt.x, pt.y, r * 0.1, pt.x, pt.y, r);
+      grad.addColorStop(0, `rgba(0,0,0,${path.alpha})`);
+      grad.addColorStop(0.5, `rgba(0,0,0,${path.alpha * 0.6})`);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      brushCtx.fillStyle = grad;
+      brushCtx.fillRect(pt.x - r, pt.y - r, r * 2, r * 2);
+    }
+  });
+  brushCtx.globalCompositeOperation = 'source-over';
+}
+
+function brushReveal(onComplete) {
+  cancelAnimationFrame(brushAnimId);
+  resizeBrushCanvas();
+  const W = brushCanvas.width, H = brushCanvas.height;
+  brushCtx.fillStyle = '#0a0a08';
+  brushCtx.fillRect(0, 0, W, H);
+
+  const paths = generateWashPaths(W, H);
+  const duration = 4000;
+  const startTime = performance.now();
+
+  function animate(now) {
+    const rawProgress = Math.min(1, (now - startTime) / duration);
+    drawWashFrame(paths, rawProgress);
+
+    if (rawProgress > 0.7) {
+      const fade = easeInOut((rawProgress - 0.7) / 0.3);
+      brushCtx.clearRect(0, 0, W, H);
+      if (fade < 1) {
+        brushCtx.globalAlpha = 1 - fade;
+        brushCtx.fillStyle = '#0a0a08';
+        brushCtx.fillRect(0, 0, W, H);
+        drawWashFrame(paths, rawProgress);
+        brushCtx.globalAlpha = 1;
+      }
+    }
+
+    if (rawProgress < 1) {
+      brushAnimId = requestAnimationFrame(animate);
+    } else {
+      brushCtx.clearRect(0, 0, W, H);
+      if (onComplete) onComplete();
+    }
+  }
+  brushAnimId = requestAnimationFrame(animate);
+}
+
+function coverBrushCanvas() {
+  resizeBrushCanvas();
+  brushCtx.fillStyle = '#0a0a08';
+  brushCtx.fillRect(0, 0, brushCanvas.width, brushCanvas.height);
+  cancelAnimationFrame(brushAnimId);
+}
+
+// ═══════════════════════════════════════════════════════════
+// LAZY IMAGE LOADING
+// ═══════════════════════════════════════════════════════════
+function lazyLoadImage(index) {
+  if (index < 0 || index >= scenes.length) return;
+  if (scenes[index].dataUrl || scenes[index].imgLoading || imageLoadPromises[index]) return;
+
+  scenes[index].imgLoading = true;
+  imageLoadPromises[index] = generateImage(scenes[index].image_prompt)
+    .then(dataUrl => {
+      scenes[index].dataUrl = dataUrl;
+      scenes[index].imgLoading = false;
+      if (currentScene === index) showSceneImage(index);
+    })
+    .catch(err => {
+      console.warn('Image ' + index + ' failed:', err.message);
+      scenes[index].imgLoading = false;
+    });
+}
+
+// ═══════════════════════════════════════════════════════════
+// CINEMATIC ENGINE
+// ═══════════════════════════════════════════════════════════
+function showSceneImage(index) {
+  const scene = scenes[index];
+  if (!scene?.dataUrl) return;
+
+  const showLayer = $(useLayerA ? 'cinema-img-a' : 'cinema-img-b');
+  const hideLayer = $(useLayerA ? 'cinema-img-b' : 'cinema-img-a');
+
+  showLayer.style.backgroundImage = 'url(' + scene.dataUrl + ')';
+  showLayer.style.transform = 'scale(1.02)';
+  showLayer.style.opacity = '0.85';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    showLayer.style.transform = 'scale(1.12)';
+  }));
+  hideLayer.style.opacity = '0';
+  useLayerA = !useLayerA;
+  coverBrushCanvas();
+  brushReveal();
+}
+
+function startCinematic() {
+  showPhase('cinematic-phase');
+  currentScene = -1;
+  currentLine = 0;
+  isPlaying = true;
+  $('ctrl-play').innerHTML = '&#10074;&#10074;';
+  $('cinema-end').style.display = 'none';
+  $('cinema-img-a').style.opacity = '0';
+  $('cinema-img-b').style.opacity = '0';
+  useLayerA = true;
+
+  const dotsContainer = $('progress-dots');
+  dotsContainer.innerHTML = '';
+  scenes.forEach(() => {
+    const dot = document.createElement('div');
+    dot.style.cssText = 'width:6px;height:6px;border-radius:50%;background:rgba(232,224,212,.3);transition:background .3s;';
+    dotsContainer.appendChild(dot);
+  });
+
+  $('cinema-title-text').textContent = dreamTitle;
+  $('cinema-title').style.opacity = '1';
+  $('scene-counter').textContent = '';
+  $('cinema-text').innerHTML = '';
+
+  if (scenes[0]?.dataUrl) {
+    const layer = $('cinema-img-a');
+    layer.style.backgroundImage = 'url(' + scenes[0].dataUrl + ')';
+    layer.style.opacity = '0.4';
+    layer.style.transform = 'scale(1.05)';
+  }
+
+  updateProgressBar();
+  sceneTimer = setTimeout(() => { if (isPlaying) playScene(0); }, 4500);
+}
+
+function playScene(index) {
+  if (index < 0 || index >= scenes.length) return showEndScreen();
+  clearTimeout(lineTimer);
+  clearTimeout(sceneTimer);
+
+  const isFirstScene = currentScene < 0;
+  currentScene = index;
+  currentLine = 0;
+  lazyLoadImage(index);
+  lazyLoadImage(index + 1);
+
+  $('cinema-title').style.opacity = '0';
+  $('scene-counter').textContent = (index + 1) + ' / ' + scenes.length;
+  document.querySelectorAll('#progress-dots div').forEach((d, i) => {
+    d.style.background = i === index ? 'rgba(232,224,212,.8)' : i < index ? 'rgba(232,224,212,.5)' : 'rgba(232,224,212,.3)';
+  });
+
+  const textContainer = $('cinema-text');
+
+  if (isFirstScene) {
+    setupSceneContent(index, textContainer);
+    if (scenes[index].dataUrl) showSceneImage(index);
+    else waitForImage(index);
+    updateProgressBar();
+    if (isPlaying) lineTimer = setTimeout(revealNextLine, 2000);
+  } else {
+    textContainer.querySelectorAll('.scene-line').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(-8px)';
+    });
+    setTimeout(() => {
+      coverBrushCanvas();
+      setupSceneContent(index, textContainer);
+      updateProgressBar();
+      setTimeout(() => {
+        const scene = scenes[index];
+        if (scene.dataUrl) {
+          const showLayer = $(useLayerA ? 'cinema-img-a' : 'cinema-img-b');
+          const hideLayer = $(useLayerA ? 'cinema-img-b' : 'cinema-img-a');
+          showLayer.style.backgroundImage = 'url(' + scene.dataUrl + ')';
+          showLayer.style.transform = 'scale(1.02)';
+          showLayer.style.opacity = '0.85';
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            showLayer.style.transform = 'scale(1.12)';
+          }));
+          hideLayer.style.opacity = '0';
+          useLayerA = !useLayerA;
+          brushReveal();
+        } else {
+          waitForImage(index);
+        }
+        if (isPlaying) lineTimer = setTimeout(revealNextLine, 2200);
+      }, 300);
+    }, 800);
+  }
+}
+
+function setupSceneContent(index, container) {
+  container.innerHTML = '';
+  (scenes[index].lines || []).forEach(line => {
+    const p = document.createElement('p');
+    p.className = 'scene-line';
+    p.textContent = line;
+    container.appendChild(p);
+  });
+}
+
+function waitForImage(index) {
+  if (!scenes[index].imgLoading) return;
+  const iv = setInterval(() => {
+    if (!scenes[index].imgLoading) {
+      clearInterval(iv);
+      if (scenes[index].dataUrl) showSceneImage(index);
+    }
+  }, 500);
+}
+
+function revealNextLine() {
+  clearTimeout(lineTimer);
+  const lines = document.querySelectorAll('#cinema-text .scene-line');
+  if (currentLine < lines.length) {
+    lines[currentLine].classList.add('visible');
+    currentLine++;
+    updateProgressBar();
+    lineTimer = setTimeout(() => { if (isPlaying) revealNextLine(); }, 4000);
+  } else {
+    sceneTimer = setTimeout(() => { if (isPlaying) playScene(currentScene + 1); }, 3000);
+  }
+}
+
+function updateProgressBar() {
+  if (!scenes.length) return;
+  const total = scenes.reduce((s, sc) => s + (sc.lines?.length || 0), 0);
+  let shown = 0;
+  for (let i = 0; i < currentScene; i++) shown += scenes[i].lines?.length || 0;
+  if (currentScene >= 0) shown += currentLine;
+  $('progress-bar-fill').style.width = Math.min(100, (shown / total) * 100) + '%';
+}
+
+function showEndScreen() {
+  clearTimeout(lineTimer);
+  clearTimeout(sceneTimer);
+  currentScene = scenes.length;
+  $('end-title').textContent = dreamTitle;
+  $('cinema-end').style.display = 'flex';
+  $('progress-bar-fill').style.width = '100%';
+}
+
+// ═══════════════════════════════════════════════════════════
+// POSTER GENERATION
+// ═══════════════════════════════════════════════════════════
+async function generatePoster() {
+  const sceneImages = await Promise.all(scenes.map(s => {
+    if (!s.dataUrl) return null;
+    return new Promise(r => { const img = new Image(); img.onload = () => r(img); img.onerror = () => r(null); img.src = s.dataUrl; });
+  }));
+
+  const W = 1080;
+  const PAD = 72;
+  const COL_W = (W - PAD * 2 - 32) / 2; // two columns with 32px gap
+  const IMG_H = 280;
+  const ROW_GAP = 48;
+  const TITLE_AREA = 200;
+  const FOOTER_AREA = 100;
+  const rows = Math.ceil(scenes.length / 2);
+  const H = TITLE_AREA + rows * (IMG_H + 100) + (rows - 1) * ROW_GAP + FOOTER_AREA;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // Background — warm dark with subtle gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, '#1c1b18');
+  bgGrad.addColorStop(1, '#141310');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Title
+  ctx.fillStyle = '#e8e0d4';
+  ctx.font = '56px "Ma Shan Zheng", serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(dreamTitle, W / 2, 100);
+
+  // Subtitle
+  ctx.fillStyle = 'rgba(232,224,212,.25)';
+  ctx.font = 'italic 15px "Cormorant Garamond", serif';
+  ctx.fillText('A DREAM VISUALIZED', W / 2, 135);
+
+  // Thin divider
+  ctx.strokeStyle = 'rgba(232,224,212,.1)';
+  ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.moveTo(W/2-30, 158); ctx.lineTo(W/2+30, 158); ctx.stroke();
+
+  // Scenes — 2-column grid, image on top, text below
+  scenes.forEach((scene, i) => {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const x = PAD + col * (COL_W + 32);
+    const blockY = TITLE_AREA + row * (IMG_H + 100 + ROW_GAP);
+    const img = sceneImages[i];
+
+    // Image
+    if (img) {
+      ctx.save();
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x, blockY, COL_W, IMG_H, 10);
+      else ctx.rect(x, blockY, COL_W, IMG_H);
+      ctx.clip();
+      const scale = Math.max(COL_W / img.width, IMG_H / img.height);
+      ctx.drawImage(img, x + (COL_W - img.width*scale)/2, blockY + (IMG_H - img.height*scale)/2, img.width*scale, img.height*scale);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = 'rgba(232,224,212,.04)';
+      if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, blockY, COL_W, IMG_H, 10); ctx.fill(); }
+      else { ctx.fillRect(x, blockY, COL_W, IMG_H); }
+    }
+
+    // Scene number
+    ctx.fillStyle = 'rgba(232,224,212,.18)';
+    ctx.font = 'italic 12px "Cormorant Garamond", serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(String(i+1).padStart(2,'0'), x, blockY + IMG_H + 20);
+
+    // Text lines
+    ctx.fillStyle = 'rgba(232,224,212,.6)';
+    ctx.font = '16px "EB Garamond", "Noto Serif SC", serif';
+    const lines = scene.lines || [];
+    const maxLineW = COL_W - 24;
+    lines.forEach((line, li) => {
+      if (li > 2) return; // max 3 lines per scene on poster
+      const y = blockY + IMG_H + 20 + li * 26;
+      if (ctx.measureText(line).width > maxLineW) {
+        let t = line;
+        while (ctx.measureText(t+'…').width > maxLineW && t.length > 10) t = t.slice(0,-1);
+        ctx.fillText(t+'…', x + 20, y);
+      } else {
+        ctx.fillText(line, x + 20, y);
+      }
+    });
+  });
+
+  // Footer
+  const footerY = H - FOOTER_AREA + 20;
+  ctx.strokeStyle = 'rgba(232,224,212,.06)';
+  ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.moveTo(PAD, footerY); ctx.lineTo(W-PAD, footerY); ctx.stroke();
+
+  const labels = { watercolor:'水彩 Watercolor', dreamcore:'梦核 Dreamcore', inkwash:'水墨 Ink Wash', pixel:'像素 Pixel Art', ghibli:'吉卜力 Ghibli', pencil:'素描 Pencil' };
+  ctx.fillStyle = 'rgba(232,224,212,.25)';
+  ctx.font = 'italic 14px "Cormorant Garamond", serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(labels[selectedStyle] || selectedStyle, W/2, footerY + 35);
+  ctx.fillStyle = 'rgba(232,224,212,.12)';
+  ctx.font = '12px "Cormorant Garamond", serif';
+  ctx.fillText('梦境画卷 · DREAMSCAPE', W/2, footerY + 58);
+
+  const link = document.createElement('a');
+  link.download = 'dreamscape-' + Date.now() + '.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// ═══════════════════════════════════════════════════════════
+// TEST MODE
+// ═══════════════════════════════════════════════════════════
+function generatePlaceholderImage(index) {
+  const c = document.createElement('canvas');
+  c.width = 960; c.height = 540;
+  const ctx = c.getContext('2d');
+  const hues = [210, 30, 160, 280, 50, 340];
+  const hue = hues[index % hues.length];
+  const grad = ctx.createLinearGradient(0, 0, 960, 540);
+  grad.addColorStop(0, `hsl(${hue},25%,18%)`);
+  grad.addColorStop(0.5, `hsl(${hue+30},20%,25%)`);
+  grad.addColorStop(1, `hsl(${hue+60},15%,15%)`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 960, 540);
+  const cg = ctx.createRadialGradient(480, 270, 50, 480, 270, 300);
+  cg.addColorStop(0, `hsla(${hue+15},30%,40%,0.3)`);
+  cg.addColorStop(1, 'transparent');
+  ctx.fillStyle = cg;
+  ctx.fillRect(0, 0, 960, 540);
+  ctx.fillStyle = 'rgba(232,224,212,.15)';
+  ctx.font = '48px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Scene ' + (index + 1), 480, 280);
+  return c.toDataURL('image/png');
+}
+
+// ═══════════════════════════════════════════════════════════
+// EVENT HANDLERS
+// ═══════════════════════════════════════════════════════════
+
+// Rotating placeholders
+let phIdx = Math.floor(Math.random() * PLACEHOLDERS.length);
+dreamInput.placeholder = PLACEHOLDERS[phIdx];
+setInterval(() => { phIdx = (phIdx + 1) % PLACEHOLDERS.length; dreamInput.placeholder = PLACEHOLDERS[phIdx]; }, 5000);
+
+// Style selector
+document.querySelectorAll('.style-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelector('.style-btn.selected')?.classList.remove('selected');
+    btn.classList.add('selected');
+    selectedStyle = btn.dataset.style;
+  });
+});
+
+// Enable/disable begin button
+dreamInput.addEventListener('input', () => { beginBtn.disabled = !dreamInput.value.trim(); });
+
+// Main generate
+beginBtn.addEventListener('click', async () => {
+  const dreamText = dreamInput.value.trim();
+  if (!dreamText) return;
+
+  showPhase('loading-phase');
+  setLoadingProgress('坠入梦境…', 'falling into the dream…', 5);
+
+  let script;
+  try {
+    script = await generateStory(dreamText);
+  } catch (e) {
+    console.warn('Gemini API failed, using fallback:', e.message);
+    script = localFallback(dreamText);
+  }
+
+  dreamTitle = script.title;
+  visualThread = script.visual_thread || '';
+  setLoadingProgress('梦境成形中…', 'the dream takes shape…', 15);
+  scenes = script.scenes.map(s => ({ ...s, dataUrl: null, imgLoading: false }));
+
+  setLoadingProgress('梦的轮廓浮现…', 'shapes emerging from the mist…', 50);
+  try {
+    scenes[0].imgLoading = true;
+    scenes[0].dataUrl = await generateImage(scenes[0].image_prompt);
+    scenes[0].imgLoading = false;
+  } catch (err) {
+    console.warn('Image 0 failed:', err.message);
+    scenes[0].imgLoading = false;
+  }
+
+  startCinematic();
+  lazyLoadImage(1);
+});
+
+// Test mode
+$('test-btn').addEventListener('click', async () => {
+  showPhase('loading-phase');
+  setLoadingProgress('坠入梦境…', 'falling into the dream…', 5);
+
+  const script = localFallback(dreamInput.value.trim() || '我梦见自己在一片森林里走着');
+  dreamTitle = script.title;
+  scenes = script.scenes.map(s => ({ ...s, dataUrl: null, imgLoading: true }));
+
+  for (let i = 0; i < scenes.length; i++) {
+    const msg = LOADING_MESSAGES[i % LOADING_MESSAGES.length];
+    setLoadingProgress(msg[0], msg[1], 15 + Math.round((i / scenes.length) * 80));
+    await new Promise(r => setTimeout(r, 300));
+    scenes[i].dataUrl = generatePlaceholderImage(i);
+    scenes[i].imgLoading = false;
+    if (i === 0) startCinematic();
+    if (currentScene >= 0 && currentScene === i) showSceneImage(i);
+  }
+});
+
+// Playback controls
+$('ctrl-play').addEventListener('click', () => {
+  isPlaying = !isPlaying;
+  $('ctrl-play').innerHTML = isPlaying ? '&#10074;&#10074;' : '&#9654;';
+  if (isPlaying) {
+    if (currentScene < 0) playScene(0);
+    else if (currentScene >= scenes.length) startCinematic();
+    else revealNextLine();
+  } else {
+    clearTimeout(lineTimer);
+    clearTimeout(sceneTimer);
+  }
+});
+
+$('ctrl-prev').addEventListener('click', () => playScene(Math.max(0, currentScene - 1)));
+$('ctrl-next').addEventListener('click', () => {
+  if (currentScene + 1 >= scenes.length) showEndScreen();
+  else playScene(currentScene + 1);
+});
+
+$('progress-bar-container').addEventListener('click', (e) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  playScene(Math.min(Math.floor(((e.clientX - rect.left) / rect.width) * scenes.length), scenes.length - 1));
+});
+
+$('btn-restart').addEventListener('click', () => {
+  $('cinema-end').style.display = 'none';
+  $('cinema-img-a').style.opacity = '0';
+  $('cinema-img-b').style.opacity = '0';
+  clearTimeout(lineTimer);
+  clearTimeout(sceneTimer);
+  scenes = [];
+  dreamTitle = '';
+  dreamInput.value = '';
+  showPhase('input-phase');
+  beginBtn.disabled = true;
+});
+
+$('btn-share').addEventListener('click', generatePoster);
+
+// Keyboard
+document.addEventListener('keydown', (e) => {
+  if (!$('cinematic-phase').classList.contains('active')) return;
+  if (e.code === 'Space') { e.preventDefault(); $('ctrl-play').click(); }
+  else if (e.code === 'ArrowLeft') $('ctrl-prev').click();
+  else if (e.code === 'ArrowRight') $('ctrl-next').click();
+});

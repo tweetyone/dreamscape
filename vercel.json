@@ -1,0 +1,8 @@
+{
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/api/story", "destination": "/api/story" },
+    { "source": "/api/image", "destination": "/api/image" }
+  ]
+}

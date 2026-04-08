@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>梦境画卷 · Dreamscape</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+SC:wght@200;300;400&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Grain texture overlay -->
+  <div class="grain"></div>
+
+  <!-- INPUT PHASE -->
+  <div id="input-phase" class="phase active">
+    <!-- Background orbs (pure CSS) -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+
+    <div class="container">
+      <div class="dream-icon">
+        <svg viewBox="0 0 64 64" fill="none">
+          <circle cx="26" cy="32" r="18" stroke="rgba(120,100,60,.4)" stroke-width="1"/>
+          <circle cx="36" cy="26" r="14" fill="#edeae4" stroke="rgba(120,100,60,.3)" stroke-width="1"/>
+          <circle cx="14" cy="14" r="1.5" fill="rgba(120,100,60,.25)"/>
+          <circle cx="52" cy="40" r="1" fill="rgba(120,100,60,.2)"/>
+          <circle cx="48" cy="12" r="1.2" fill="rgba(120,100,60,.15)"/>
+          <circle cx="10" cy="46" r="0.8" fill="rgba(120,100,60,.12)"/>
+        </svg>
+      </div>
+      <h1>梦境画卷</h1>
+      <p class="subtitle">DREAMSCAPE</p>
+      <div class="title-line"></div>
+      <p class="description">
+        讲述你的梦，AI 为你绘出每一帧画面<br>
+        <small>Describe your dream — AI paints every scene</small>
+      </p>
+      <p class="style-label">选择画风 · Visual Style</p>
+      <div class="style-selector">
+        <button class="style-btn selected" data-style="watercolor">水彩 Watercolor</button>
+        <button class="style-btn" data-style="dreamcore">梦核 Dreamcore</button>
+        <button class="style-btn" data-style="inkwash">水墨 Ink Wash</button>
+        <button class="style-btn" data-style="pixel">像素 Pixel Art</button>
+        <button class="style-btn" data-style="ghibli">吉卜力 Ghibli</button>
+        <button class="style-btn" data-style="pencil">素描 Pencil</button>
+      </div>
+      <textarea id="dream-input" rows="3" placeholder=""></textarea>
+      <div class="btn-row">
+        <button id="begin-btn" disabled>入梦 · Dream</button>
+        <button id="test-btn" title="Skip API calls, use placeholder images">Test UI</button>
+      </div>
+      <p class="footer-note">Imagen 4.0 · Gemini AI</p>
+    </div>
+  </div>
+
+  <!-- LOADING PHASE -->
+  <div id="loading-phase" class="phase">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div style="text-align:center;position:relative;z-index:2;">
+      <div style="position:relative;width:100px;height:100px;margin:0 auto 32px;">
+        <svg viewBox="0 0 100 100" style="width:100%;height:100%;animation:float 3s ease-in-out infinite;">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(180,150,100,.1)" stroke-width="1"/>
+          <circle id="loading-ring" cx="50" cy="50" r="42" fill="none"
+            stroke="rgba(180,150,100,.35)" stroke-width="1.5"
+            stroke-dasharray="264" stroke-dashoffset="264"
+            stroke-linecap="round" transform="rotate(-90 50 50)"/>
+          <circle cx="50" cy="50" r="8" fill="rgba(180,150,100,.06)" style="animation:pulse 3s ease-in-out infinite;"/>
+        </svg>
+        <div id="loading-pct" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:.72rem;color:rgba(180,150,100,.5);letter-spacing:.05em;"></div>
+      </div>
+      <p id="loading-step" style="font-family:'Ma Shan Zheng','Cormorant Garamond',serif;font-size:1.1rem;color:#888;letter-spacing:.1em;">坠入梦境…</p>
+      <p id="loading-detail" style="font-family:'Cormorant Garamond',serif;font-size:.72rem;color:#bbb;font-style:italic;letter-spacing:.15em;margin-top:10px;">falling into the dream…</p>
+    </div>
+  </div>
+
+  <!-- CINEMATIC PHASE -->
+  <div id="cinematic-phase" class="phase" style="min-height:100vh;flex-direction:column;position:relative;background:#0a0a08;">
+    <div id="cinema-screen" style="position:fixed;inset:0;overflow:hidden;">
+      <div id="cinema-img-a" style="position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 2s ease,transform 10s linear;"></div>
+      <div id="cinema-img-b" style="position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 2s ease,transform 10s linear;"></div>
+      <canvas id="brush-canvas" style="position:absolute;inset:0;z-index:3;pointer-events:none;"></canvas>
+      <div id="cinema-transition" style="position:absolute;inset:0;background:#0a0a08;opacity:0;transition:opacity 1.5s ease;z-index:5;pointer-events:none;"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,8,.7) 0%,rgba(10,10,8,.05) 40%,rgba(10,10,8,.1) 100%);z-index:4;"></div>
+      <div id="cinema-title" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;opacity:0;transition:opacity 2s ease;z-index:10;">
+        <h1 id="cinema-title-text" style="font-family:'Ma Shan Zheng','Cormorant Garamond',serif;font-size:clamp(2rem,5vw,3.5rem);font-weight:400;color:#e8e0d4;letter-spacing:.12em;"></h1>
+        <p style="font-family:'Cormorant Garamond',serif;font-size:.78rem;color:rgba(232,224,212,.4);letter-spacing:.28em;font-style:italic;">A DREAM VISUALIZED</p>
+      </div>
+      <div id="cinema-text" style="position:absolute;bottom:clamp(100px,15vh,160px);left:clamp(30px,6vw,80px);right:clamp(30px,6vw,80px);max-width:600px;z-index:10;"></div>
+      <div id="scene-counter" style="position:absolute;top:28px;right:32px;font-family:'Cormorant Garamond',serif;font-size:.72rem;color:rgba(232,224,212,.3);letter-spacing:.15em;z-index:20;"></div>
+    </div>
+
+    <!-- Controls -->
+    <div style="position:fixed;bottom:0;left:0;right:0;z-index:50;padding:0 0 24px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+      <div id="progress-bar-container" style="width:min(80%,600px);height:2px;background:rgba(232,224,212,.15);border-radius:1px;cursor:pointer;position:relative;">
+        <div id="progress-bar-fill" style="height:100%;width:0%;background:rgba(232,224,212,.4);border-radius:1px;transition:width .3s;"></div>
+        <div id="progress-dots" style="position:absolute;top:-4px;left:0;right:0;height:10px;display:flex;justify-content:space-between;align-items:center;pointer-events:none;"></div>
+      </div>
+      <div style="display:flex;gap:24px;align-items:center;">
+        <button id="ctrl-prev" class="ctrl-btn" title="Previous">&#x2039;</button>
+        <button id="ctrl-play" class="ctrl-btn" title="Play/Pause" style="font-size:.7rem;">&#10074;&#10074;</button>
+        <button id="ctrl-next" class="ctrl-btn" title="Next">&#x203a;</button>
+      </div>
+    </div>
+
+    <!-- End screen -->
+    <div id="cinema-end" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:24px;background:rgba(10,10,8,.95);z-index:60;">
+      <p id="end-title" style="font-family:'Ma Shan Zheng','Cormorant Garamond',serif;font-size:clamp(1.6rem,4vw,2.6rem);color:#e8e0d4;letter-spacing:.1em;"></p>
+      <p style="font-family:'Cormorant Garamond',serif;font-size:clamp(.9rem,1.6vw,1.2rem);font-weight:300;font-style:italic;color:rgba(232,224,212,.4);letter-spacing:.06em;">— 梦醒了，画还在 —</p>
+      <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;justify-content:center;">
+        <button id="btn-share" class="end-btn">分享海报 · SHARE</button>
+        <button id="btn-restart" class="end-btn">再做一个梦 · DREAM AGAIN</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
