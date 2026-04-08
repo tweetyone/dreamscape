@@ -45,25 +45,25 @@ body {
 .orb-1 {
   width:clamp(300px,45vw,550px); height:clamp(300px,45vw,550px);
   top:-10%; right:-5%;
-  background:radial-gradient(circle, rgba(210,180,120,.45) 0%, rgba(210,180,120,.1) 50%, transparent 70%);
+  background:radial-gradient(circle, rgba(210,175,100,.6) 0%, rgba(210,175,100,.2) 50%, transparent 70%);
   animation:blobMove1 30s ease-in-out infinite;
 }
 .orb-2 {
   width:clamp(280px,40vw,500px); height:clamp(280px,40vw,500px);
   bottom:-8%; left:-5%;
-  background:radial-gradient(circle, rgba(175,160,210,.35) 0%, rgba(175,160,210,.08) 50%, transparent 70%);
+  background:radial-gradient(circle, rgba(170,150,215,.5) 0%, rgba(170,150,215,.15) 50%, transparent 70%);
   animation:blobMove2 35s ease-in-out infinite;
 }
 .orb-3 {
   width:clamp(200px,30vw,400px); height:clamp(200px,30vw,400px);
   top:30%; left:10%;
-  background:radial-gradient(circle, rgba(160,200,180,.3) 0%, rgba(160,200,180,.06) 50%, transparent 70%);
+  background:radial-gradient(circle, rgba(150,200,170,.45) 0%, rgba(150,200,170,.12) 50%, transparent 70%);
   animation:blobMove1 25s ease-in-out infinite reverse;
 }
 .orb-4 {
   width:clamp(220px,35vw,420px); height:clamp(220px,35vw,420px);
   top:10%; right:20%;
-  background:radial-gradient(circle, rgba(220,180,165,.3) 0%, rgba(220,180,165,.06) 50%, transparent 70%);
+  background:radial-gradient(circle, rgba(220,175,155,.45) 0%, rgba(220,175,155,.12) 50%, transparent 70%);
   animation:blobMove2 28s ease-in-out infinite reverse;
 }
 
@@ -81,11 +81,14 @@ body {
 }
 .dream-icon svg { width:100%; height:100%; }
 
-/* Title — large, editorial serif like David Whyte */
+/* Title — large, editorial serif */
 #input-phase h1 {
-  font-family:'Ma Shan Zheng','Cormorant Garamond',serif;
+  font-family:'Cormorant Garamond',serif;
   font-size:clamp(2.4rem,7vw,3.4rem); font-weight:400;
   color:#2a2a28; letter-spacing:.12em; line-height:1.2;
+}
+html[lang="zh"] #input-phase h1 {
+  font-family:'Ma Shan Zheng','Cormorant Garamond',serif;
   margin-bottom:0;
   animation:fadeIn 2.5s ease .3s both;
 }
@@ -221,6 +224,12 @@ body {
   background:linear-gradient(180deg, #edeae4 0%, #e4e0d8 40%, #ddd8cf 100%);
 }
 #loading-phase svg circle { transition:stroke-dashoffset 0.8s ease; }
+
+/* Chinese font overrides — Ma Shan Zheng only for Chinese titles */
+html[lang="zh"] #cinema-title-text,
+html[lang="zh"] #end-title {
+  font-family:'Ma Shan Zheng','Cormorant Garamond',serif;
+}
 
 /* ═══════ CINEMATIC PHASE ═══════ */
 .scene-line {

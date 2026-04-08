@@ -10,6 +10,9 @@ const STYLE_SUFFIXES = {
   pixel: ', abstract pixel art, limited 32-color palette, impressionistic pixel clusters, dithering patterns creating depth, dream-like scene dissolving at edges, Superbrothers art style, emotional atmosphere over detail, no text, no frame',
   ghibli: ', Studio Ghibli anime style, warm hand-painted background art, lush green landscapes, soft cel shading, Hayao Miyazaki aesthetic, golden afternoon light, detailed clouds and foliage, gentle and nostalgic atmosphere, animated film still, no text, no frame',
   pencil: ', pencil sketch on cream paper, delicate graphite hatching and cross-hatching, visible paper grain, loose expressive line work, areas left unfinished fading into blank paper, chiaroscuro light and shadow, hand-drawn illustration feel, no text, no frame',
+  ukiyoe: ', traditional Japanese ukiyo-e woodblock print style, bold flat color areas, strong black outlines, wave patterns, Hokusai and Hiroshige influence, dramatic composition, stylized clouds and water, decorative natural elements, Edo period aesthetic, no text, no frame',
+  cyberpunk: ', cyberpunk neon cityscape, rain-soaked streets reflecting neon signs, deep blue and magenta and electric cyan color palette, volumetric fog, holographic elements, Blade Runner atmosphere, futuristic dystopian mood, dramatic lighting, no text, no frame',
+  clay: ', claymation stop-motion style, sculpted clay figures and sets, visible fingerprint textures on surfaces, soft diffused studio lighting, miniature handmade world, warm tactile quality, Aardman and Laika aesthetic, shallow depth of field, no text, no frame',
 };
 
 // PLACEHOLDERS and LOADING_MESSAGES are now in i18n.js via t()
@@ -681,7 +684,7 @@ async function generatePoster() {
   ctx.lineWidth = 0.5;
   ctx.beginPath(); ctx.moveTo(PAD, footerY); ctx.lineTo(W-PAD, footerY); ctx.stroke();
 
-  const labels = { watercolor:'水彩 Watercolor', dreamcore:'梦核 Dreamcore', inkwash:'水墨 Ink Wash', pixel:'像素 Pixel Art', ghibli:'吉卜力 Ghibli', pencil:'素描 Pencil' };
+  const labels = { watercolor:'水彩 Watercolor', dreamcore:'梦核 Dreamcore', inkwash:'水墨 Ink Wash', pixel:'像素 Pixel Art', ghibli:'吉卜力 Ghibli', pencil:'素描 Pencil', ukiyoe:'浮世绘 Ukiyo-e', cyberpunk:'赛博 Cyberpunk', clay:'黏土 Claymation' };
   ctx.fillStyle = 'rgba(232,224,212,.35)';
   ctx.font = 'italic 15px "Cormorant Garamond", serif';
   ctx.textAlign = 'center';
@@ -870,29 +873,42 @@ $('btn-interpret').addEventListener('click', async () => {
     return;
   }
 
-  // Collect dream story text
-  const storyText = scenes.map((s, i) => s.lines?.join(' ')).join('\n');
-  const isCN = /[\u4e00-\u9fff]/.test(storyText);
+  await runInterpretation();
+});
 
-  const prompt = `You are a dream interpreter combining psychology (Jung, Freud) and cultural symbolism. The user had this dream:
+function getStoryText() {
+  return scenes.map(s => s.lines?.join(' ')).join('\n');
+}
 
-${storyText}
+function buildInterpretPrompt(dreamText) {
+  const text = dreamText || getStoryText();
+  return `Interpret this dream in 3-5 sentences MAX. Be casual and specific. No filler, no restating the dream. Jump straight to what it might mean.
 
-Provide a warm, insightful interpretation in 3-4 short paragraphs. Cover:
-1. Key symbols and what they might represent
-2. Emotional undertones and what they suggest
-3. A gentle, encouraging takeaway
+Dream: ${text}
 
-${t().interpretLang}
-Be warm and thoughtful, not clinical. No bullet points or headers — write as flowing paragraphs.`;
+Rules:
+- 3-5 sentences TOTAL. Not paragraphs — sentences.
+- Do NOT repeat or summarize the dream content back
+- Jump straight to interpretation: what the key symbols likely mean, and one real-life insight
+- Plain language only. No "原型", "潜意识", "象征着", "inner self", "subconscious"
+- ${t().interpretLang}`;
+}
 
+async function runInterpretation(customPrompt) {
+  const panel = $('interpret-panel');
+  const textEl = $('interpret-text');
+  panel.style.display = 'block';
+  textEl.textContent = t().interpretLoading;
+  interpretationCache = null;
+
+  const prompt = customPrompt || buildInterpretPrompt();
   try {
     const resp = await fetch('/api/story', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.8, maxOutputTokens: 1500 },
+        generationConfig: { temperature: 0.8, maxOutputTokens: 2000 },
       }),
     });
     const data = await resp.json();
@@ -903,6 +919,58 @@ Be warm and thoughtful, not clinical. No bullet points or headers — write as f
   } catch (e) {
     textEl.textContent = t().interpretFail;
   }
+}
+
+// Debug panel — toggle with D key on end screen
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'KeyD' && $('cinema-end').style.display === 'flex') {
+    const dp = $('debug-panel');
+    if (dp.style.display === 'none') {
+      dp.style.display = 'block';
+      $('debug-prompt').value = buildInterpretPrompt();
+    } else {
+      dp.style.display = 'none';
+    }
+  }
+});
+
+$('debug-run').addEventListener('click', () => {
+  runInterpretation($('debug-prompt').value);
+});
+
+$('debug-reset').addEventListener('click', () => {
+  $('debug-prompt').value = buildInterpretPrompt();
+});
+
+// Test interpret from home page
+$('test-interpret-btn').addEventListener('click', async () => {
+  const text = dreamInput.value.trim();
+  if (!text) { dreamInput.focus(); return; }
+
+  const modal = $('test-interpret-modal');
+  const result = $('test-interpret-result');
+  modal.style.display = 'flex';
+  result.textContent = t().interpretLoading;
+
+  try {
+    const resp = await fetch('/api/story', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: buildInterpretPrompt(text) }] }],
+        generationConfig: { temperature: 0.8, maxOutputTokens: 2000 },
+      }),
+    });
+    const data = await resp.json();
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    result.textContent = parts.map(p => p.text || '').join('').trim();
+  } catch (e) {
+    result.textContent = t().interpretFail;
+  }
+});
+
+$('test-interpret-close').addEventListener('click', () => {
+  $('test-interpret-modal').style.display = 'none';
 });
 
 // Loading back button

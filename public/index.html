@@ -45,11 +45,15 @@
         <button class="style-btn" data-style="pixel">像素 Pixel Art</button>
         <button class="style-btn" data-style="ghibli">吉卜力 Ghibli</button>
         <button class="style-btn" data-style="pencil">素描 Pencil</button>
+        <button class="style-btn" data-style="ukiyoe">浮世绘 Ukiyo-e</button>
+        <button class="style-btn" data-style="cyberpunk">赛博 Cyberpunk</button>
+        <button class="style-btn" data-style="clay">黏土 Claymation</button>
       </div>
       <textarea id="dream-input" rows="3" placeholder=""></textarea>
       <div class="btn-row">
         <button id="begin-btn" disabled>入梦 · Dream</button>
         <button id="test-btn" title="Skip API calls, use placeholder images">Test UI</button>
+        <button id="test-interpret-btn" title="Test dream interpretation prompt" style="padding:10px 20px;border:1px solid rgba(140,130,110,.12);border-radius:20px;background:rgba(255,255,255,.15);color:#b0a898;font-family:'Cormorant Garamond',serif;font-size:.68rem;letter-spacing:.1em;cursor:pointer;transition:all .4s;animation:fadeIn 1.5s ease 1.5s both;">Test Interpret</button>
       </div>
       <p class="footer-note">Imagen 4.0 · Gemini AI</p>
     </div>
@@ -73,7 +77,7 @@
         </svg>
         <div id="loading-pct" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:.72rem;color:rgba(180,150,100,.5);letter-spacing:.05em;"></div>
       </div>
-      <p id="loading-step" style="font-family:'Ma Shan Zheng','Cormorant Garamond',serif;font-size:1.1rem;color:#888;letter-spacing:.1em;">坠入梦境…</p>
+      <p id="loading-step" style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:#888;letter-spacing:.1em;">坠入梦境…</p>
       <p id="loading-detail" style="font-family:'Cormorant Garamond',serif;font-size:.72rem;color:#bbb;font-style:italic;letter-spacing:.15em;margin-top:10px;">falling into the dream…</p>
     </div>
   </div>
@@ -87,7 +91,7 @@
       <div id="cinema-transition" style="position:absolute;inset:0;background:#0a0a08;opacity:0;transition:opacity 1.5s ease;z-index:5;pointer-events:none;"></div>
       <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,8,.7) 0%,rgba(10,10,8,.05) 40%,rgba(10,10,8,.1) 100%);z-index:4;"></div>
       <div id="cinema-title" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;opacity:0;transition:opacity 2s ease;z-index:10;">
-        <h1 id="cinema-title-text" style="font-family:'Ma Shan Zheng','Cormorant Garamond',serif;font-size:clamp(2rem,5vw,3.5rem);font-weight:400;color:#e8e0d4;letter-spacing:.12em;"></h1>
+        <h1 id="cinema-title-text" style="font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,5vw,3.5rem);font-weight:400;color:#e8e0d4;letter-spacing:.12em;"></h1>
         <p style="font-family:'Cormorant Garamond',serif;font-size:.78rem;color:rgba(232,224,212,.4);letter-spacing:.28em;font-style:italic;">A DREAM VISUALIZED</p>
       </div>
       <div id="cinema-text" style="position:absolute;bottom:clamp(100px,15vh,160px);left:clamp(30px,6vw,80px);right:clamp(30px,6vw,80px);max-width:600px;z-index:10;"></div>
@@ -109,7 +113,7 @@
 
     <!-- End screen -->
     <div id="cinema-end" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:24px;background:rgba(10,10,8,.95);z-index:60;">
-      <p id="end-title" style="font-family:'Ma Shan Zheng','Cormorant Garamond',serif;font-size:clamp(1.6rem,4vw,2.6rem);color:#e8e0d4;letter-spacing:.1em;"></p>
+      <p id="end-title" style="font-family:'Cormorant Garamond',serif;font-size:clamp(1.6rem,4vw,2.6rem);color:#e8e0d4;letter-spacing:.1em;"></p>
       <p style="font-family:'Cormorant Garamond',serif;font-size:clamp(.9rem,1.6vw,1.2rem);font-weight:300;font-style:italic;color:rgba(232,224,212,.4);letter-spacing:.06em;">— 梦醒了，画还在 —</p>
       <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;justify-content:center;">
         <button id="btn-interpret" class="end-btn">解梦 · INTERPRET</button>
@@ -120,6 +124,22 @@
       <div id="interpret-panel" style="display:none;max-width:560px;width:90%;margin-top:8px;padding:28px 32px;background:rgba(232,224,212,.05);border:1px solid rgba(232,224,212,.08);border-radius:16px;backdrop-filter:blur(8px);">
         <p id="interpret-text" style="font-family:'Cormorant Garamond','Noto Serif SC',serif;font-size:.92rem;line-height:2.2;color:rgba(232,224,212,.7);"></p>
       </div>
+      <!-- Debug: prompt editor (toggle with D key) -->
+      <div id="debug-panel" style="display:none;max-width:680px;width:95%;margin-top:12px;">
+        <textarea id="debug-prompt" style="width:100%;height:200px;padding:16px;background:rgba(232,224,212,.06);border:1px solid rgba(232,224,212,.1);border-radius:12px;color:rgba(232,224,212,.8);font-family:monospace;font-size:.75rem;line-height:1.6;resize:vertical;outline:none;"></textarea>
+        <div style="display:flex;gap:10px;margin-top:8px;justify-content:center;">
+          <button id="debug-run" class="end-btn" style="font-size:.7rem;padding:8px 20px;">Run Prompt</button>
+          <button id="debug-reset" class="end-btn" style="font-size:.7rem;padding:8px 20px;">Reset Default</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interpret test modal -->
+  <div id="test-interpret-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;">
+    <div style="max-width:560px;width:100%;max-height:80vh;overflow-y:auto;padding:32px 32px 48px;background:#edeae4;border-radius:16px;position:relative;">
+      <button id="test-interpret-close" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.2rem;color:#aaa;cursor:pointer;">&times;</button>
+      <p id="test-interpret-result" style="font-family:'Cormorant Garamond','Noto Serif SC',serif;font-size:.92rem;line-height:2.2;color:#4a4a4a;"></p>
     </div>
   </div>
 

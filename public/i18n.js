@@ -11,6 +11,7 @@ const TEXTS = {
     styles: {
       watercolor: '水彩', dreamcore: '梦核', inkwash: '水墨',
       pixel: '像素', ghibli: '吉卜力', pencil: '素描',
+      ukiyoe: '浮世绘', cyberpunk: '赛博', clay: '黏土',
     },
     beginBtn: '入梦',
     testBtn: '测试',
@@ -51,6 +52,7 @@ const TEXTS = {
     styles: {
       watercolor: 'Watercolor', dreamcore: 'Dreamcore', inkwash: 'Ink Wash',
       pixel: 'Pixel Art', ghibli: 'Ghibli', pencil: 'Pencil',
+      ukiyoe: 'Ukiyo-e', cyberpunk: 'Cyberpunk', clay: 'Claymation',
     },
     beginBtn: 'Dream',
     testBtn: 'Test',
