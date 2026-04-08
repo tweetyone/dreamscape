@@ -146,7 +146,8 @@ Rules:
 - The story should flow naturally from scene to scene — each one moves the dream forward
 - visual_thread: describe the SHARED visual identity across all scenes (color palette, light quality, atmosphere, a recurring element like fog/particles/light rays). This will be prepended to every image prompt to ensure visual coherence.
 - image_prompt: ENGLISH, describe what's IN this specific scene. Focus on subject, composition, spatial arrangement. Keep it complementary to visual_thread (don't repeat atmosphere — focus on what's unique to this scene).
-- Match user's language for title and lines. Write naturally — not overly literary, not flat. Like a good bedtime story.
+- CRITICAL: If the user writes in Chinese, title and ALL lines MUST be in Chinese. If in English, write in English. NEVER mix languages. The language of your output MUST match the user's input language exactly.
+- Write naturally — not overly literary, not flat. Like a good bedtime story.
 - ONLY output valid JSON, nothing else`;
 
   const resp = await fetch('/api/story', {
