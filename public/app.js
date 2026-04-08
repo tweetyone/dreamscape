@@ -4,10 +4,10 @@
 // API key is stored server-side in Vercel environment variables
 
 const STYLE_SUFFIXES = {
-  watercolor: ', abstract watercolor painting, loose expressive washes bleeding into each other, visible paper texture, unfinished edges fading into white, emotional color fields, Turner-esque atmosphere, impressionistic not literal, soft focus, no photorealism, no text, no frame',
-  dreamcore: ', abstract dreamcore art, impossible geometry, objects dissolving into mist, soft neon halos, liminal negative space, things half-formed and shifting, Magritte meets Remedios Varo, surreal emotional landscape, not photographic, no text, no frame',
-  inkwash: ', abstract Chinese ink wash painting, bold single-stroke gestures, vast empty space, ink bleeding and pooling on wet rice paper, qi yun sheng dong, suggestion over depiction, Bada Shanren minimalism, monochrome with subtle ink gradations, no text, no frame',
-  pixel: ', abstract pixel art, limited 32-color palette, impressionistic pixel clusters, dithering patterns creating depth, dream-like scene dissolving at edges, Superbrothers art style, emotional atmosphere over detail, no text, no frame',
+  watercolor: ', watercolor painting on white paper, soft translucent washes, delicate brushstrokes, minimal elegant composition, muted palette, dreamy atmosphere, fine art illustration, no text, no frame',
+  dreamcore: ', dreamcore aesthetic, surreal floating objects, impossible architecture, soft neon glow, liminal space, pastel fog, ethereal lighting, otherworldly atmosphere, no text, no frame',
+  inkwash: ', traditional Chinese ink wash painting, sumi-e style, monochrome black ink on rice paper, flowing brushstrokes, minimalist composition, misty atmosphere, zen aesthetic, no text, no frame',
+  pixel: ', pixel art style, 16-bit retro game aesthetic, dreamy color palette, soft pixels, nostalgic atmosphere, detailed pixel scenery, dithering, no text, no frame',
   ghibli: ', Studio Ghibli anime style, warm hand-painted background art, lush green landscapes, soft cel shading, Hayao Miyazaki aesthetic, golden afternoon light, detailed clouds and foliage, gentle and nostalgic atmosphere, animated film still, no text, no frame',
   pencil: ', pencil sketch on cream paper, delicate graphite hatching and cross-hatching, visible paper grain, loose expressive line work, areas left unfinished fading into blank paper, chiaroscuro light and shadow, hand-drawn illustration feel, no text, no frame',
   ukiyoe: ', traditional Japanese ukiyo-e woodblock print style, bold flat color areas, strong black outlines, wave patterns, Hokusai and Hiroshige influence, dramatic composition, stylized clouds and water, decorative natural elements, Edo period aesthetic, no text, no frame',
@@ -82,7 +82,7 @@ function setLoadingProgress(step, detail, pct) {
 // ═══════════════════════════════════════════════════════════
 async function generateImage(prompt, retries = 2) {
   const suffix = STYLE_SUFFIXES[selectedStyle] || STYLE_SUFFIXES.watercolor;
-  const safetyNote = ', fully clothed characters, no nudity, no exposed skin, no gore, safe for all audiences';
+  const safetyNote = '';
   const fullPrompt = (visualThread ? visualThread + '. ' : '') + prompt + suffix + safetyNote;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -133,7 +133,7 @@ Rules:
 - 2-4 SHORT sentences per scene. Keep sentences concise — under 25 characters for Chinese, under 15 words for English. Write like a storyteller: warm, unhurried. Not poetry, but not wordy either. Use sensory details (sounds, smells, textures). Less is more.
 - Each scene MUST introduce something new — a new emotion, a new discovery, a shift in atmosphere. Never repeat the same action across scenes. The dream should PROGRESS, not loop.
 - visual_thread: describe the SHARED visual identity across all scenes (color palette, light quality, atmosphere, a recurring element like fog/particles/light rays). This will be prepended to every image prompt to ensure visual coherence.
-- image_prompt: ENGLISH, describe what's IN this specific scene. Focus on subject, composition, spatial arrangement. Keep it complementary to visual_thread (don't repeat atmosphere — focus on what's unique to this scene). IMPORTANT: Keep image prompts safe for all audiences — NO nudity, NO exposed skin, NO gore. If the dream involves bodies or physical contact, describe it through metaphor, symbolism, or abstract visuals (e.g. "translucent cotton-like forms merging" instead of literal body descriptions). Characters should always be clothed or abstracted into shapes/silhouettes.
+- image_prompt: ENGLISH, describe what a painter would SEE in this scene — specific objects, people, setting, lighting, colors, composition. Be vivid and concrete, like describing a movie frame.
 - CRITICAL: If the user writes in Chinese, title and ALL lines MUST be in Chinese. If in English, write in English. NEVER mix languages. The language of your output MUST match the user's input language exactly.
 - Write naturally — not overly literary, not flat. Like a good bedtime story.
 - ONLY output valid JSON, nothing else`;
