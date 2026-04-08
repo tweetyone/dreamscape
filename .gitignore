@@ -1,5 +1,5 @@
 .env
-.vercel
+.wrangler
 node_modules
 .DS_Store
 *.png
