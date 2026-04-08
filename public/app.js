@@ -12,23 +12,7 @@ const STYLE_SUFFIXES = {
   pencil: ', pencil sketch on cream paper, delicate graphite hatching and cross-hatching, visible paper grain, loose expressive line work, areas left unfinished fading into blank paper, chiaroscuro light and shadow, hand-drawn illustration feel, no text, no frame',
 };
 
-const PLACEHOLDERS = [
-  '我梦见自己走在一片花海中，远处有座老房子，烟囱在冒烟…',
-  'I dreamt of standing on a mountaintop, looking down at a still lake in the fog…',
-  '梦里下着大雨，雨停后我看到一棵巨大的树，树下有只鹿在休息…',
-  'There was an old tree in a golden field, and fireflies were rising from the grass…',
-  '我梦见自己在一座空荡荡的图书馆里，书本自己飞起来…',
-  'I was walking through a city made entirely of glass, and the sky was purple…',
-];
-
-const LOADING_MESSAGES = [
-  ['梦的轮廓浮现…', 'shapes emerging from the mist…'],
-  ['色彩在蔓延…', 'colors bleeding through…'],
-  ['光线穿过云层…', 'light breaking through clouds…'],
-  ['记忆在重组…', 'memories reassembling…'],
-  ['远处传来回响…', 'echoes from the distance…'],
-  ['梦境即将完整…', 'the dream is almost whole…'],
-];
+// PLACEHOLDERS and LOADING_MESSAGES are now in i18n.js via t()
 
 const FALLBACK_PROMPTS = {
   tree: 'warm ochre light dissolving upward into deep teal, a dark branching form reaching through golden haze, roots merging with earth tones below',
@@ -95,7 +79,8 @@ function setLoadingProgress(step, detail, pct) {
 // ═══════════════════════════════════════════════════════════
 async function generateImage(prompt, retries = 2) {
   const suffix = STYLE_SUFFIXES[selectedStyle] || STYLE_SUFFIXES.watercolor;
-  const fullPrompt = (visualThread ? visualThread + '. ' : '') + prompt + suffix;
+  const safetyNote = ', fully clothed characters, no nudity, no exposed skin, no gore, safe for all audiences';
+  const fullPrompt = (visualThread ? visualThread + '. ' : '') + prompt + suffix + safetyNote;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -142,10 +127,10 @@ async function generateStory(dreamText) {
 
 Rules:
 - Exactly 6 scenes
-- 3-5 sentences per scene. Write like a storyteller: warm, unhurried, gently descriptive. Not poetry — narrative. Like someone softly telling you what they saw in a dream. Use sensory details (sounds, smells, textures).
-- The story should flow naturally from scene to scene — each one moves the dream forward
+- 2-4 SHORT sentences per scene. Keep sentences concise — under 25 characters for Chinese, under 15 words for English. Write like a storyteller: warm, unhurried. Not poetry, but not wordy either. Use sensory details (sounds, smells, textures). Less is more.
+- Each scene MUST introduce something new — a new emotion, a new discovery, a shift in atmosphere. Never repeat the same action across scenes. The dream should PROGRESS, not loop.
 - visual_thread: describe the SHARED visual identity across all scenes (color palette, light quality, atmosphere, a recurring element like fog/particles/light rays). This will be prepended to every image prompt to ensure visual coherence.
-- image_prompt: ENGLISH, describe what's IN this specific scene. Focus on subject, composition, spatial arrangement. Keep it complementary to visual_thread (don't repeat atmosphere — focus on what's unique to this scene).
+- image_prompt: ENGLISH, describe what's IN this specific scene. Focus on subject, composition, spatial arrangement. Keep it complementary to visual_thread (don't repeat atmosphere — focus on what's unique to this scene). IMPORTANT: Keep image prompts safe for all audiences — NO nudity, NO exposed skin, NO gore. If the dream involves bodies or physical contact, describe it through metaphor, symbolism, or abstract visuals (e.g. "translucent cotton-like forms merging" instead of literal body descriptions). Characters should always be clothed or abstracted into shapes/silhouettes.
 - CRITICAL: If the user writes in Chinese, title and ALL lines MUST be in Chinese. If in English, write in English. NEVER mix languages. The language of your output MUST match the user's input language exactly.
 - Write naturally — not overly literary, not flat. Like a good bedtime story.
 - ONLY output valid JSON, nothing else`;
@@ -452,7 +437,7 @@ function playScene(index) {
     if (scenes[index].dataUrl) showSceneImage(index);
     else waitForImage(index);
     updateProgressBar();
-    if (isPlaying) lineTimer = setTimeout(revealNextLine, 2000);
+    if (isPlaying) lineTimer = setTimeout(revealNextLine, 1500);
   } else {
     textContainer.querySelectorAll('.scene-line').forEach(el => {
       el.style.opacity = '0';
@@ -479,7 +464,7 @@ function playScene(index) {
         } else {
           waitForImage(index);
         }
-        if (isPlaying) lineTimer = setTimeout(revealNextLine, 2200);
+        if (isPlaying) lineTimer = setTimeout(revealNextLine, 1600);
       }, 300);
     }, 800);
   }
@@ -512,9 +497,9 @@ function revealNextLine() {
     lines[currentLine].classList.add('visible');
     currentLine++;
     updateProgressBar();
-    lineTimer = setTimeout(() => { if (isPlaying) revealNextLine(); }, 4000);
+    lineTimer = setTimeout(() => { if (isPlaying) revealNextLine(); }, 2800);
   } else {
-    sceneTimer = setTimeout(() => { if (isPlaying) playScene(currentScene + 1); }, 3000);
+    sceneTimer = setTimeout(() => { if (isPlaying) playScene(currentScene + 1); }, 2000);
   }
 }
 
@@ -540,6 +525,10 @@ function showEndScreen() {
 // POSTER GENERATION
 // ═══════════════════════════════════════════════════════════
 async function generatePoster() {
+  const shareBtn = $('btn-share');
+  shareBtn.textContent = t().sharingBtn;
+  shareBtn.disabled = true;
+  try {
   const sceneImages = await Promise.all(scenes.map(s => {
     if (!s.dataUrl) return null;
     return new Promise(r => { const img = new Image(); img.onload = () => r(img); img.onerror = () => r(null); img.src = s.dataUrl; });
@@ -618,21 +607,27 @@ async function generatePoster() {
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, totalH);
 
+  // Watermark at top
+  ctx.fillStyle = 'rgba(232,224,212,.3)';
+  ctx.font = '13px "Cormorant Garamond", serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('梦境画卷 · DREAMSCAPE    dreamscape-e5s.pages.dev', W / 2, 32);
+
   // Title
   ctx.fillStyle = '#e8e0d4';
   ctx.font = '56px "Ma Shan Zheng", serif';
   ctx.textAlign = 'center';
-  ctx.fillText(dreamTitle, W / 2, 88);
+  ctx.fillText(dreamTitle, W / 2, 100);
 
   // Subtitle
   ctx.fillStyle = 'rgba(232,224,212,.2)';
   ctx.font = 'italic 14px "Cormorant Garamond", serif';
-  ctx.fillText('A DREAM VISUALIZED', W / 2, 120);
+  ctx.fillText('A DREAM VISUALIZED', W / 2, 132);
 
   // Vertical divider
   ctx.strokeStyle = 'rgba(232,224,212,.08)';
   ctx.lineWidth = 0.5;
-  ctx.beginPath(); ctx.moveTo(W/2, 140); ctx.lineTo(W/2, 160); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W/2, 150); ctx.lineTo(W/2, 168); ctx.stroke();
 
   // Scenes — single column, image + text below
   let y = TITLE_AREA;
@@ -687,18 +682,19 @@ async function generatePoster() {
   ctx.beginPath(); ctx.moveTo(PAD, footerY); ctx.lineTo(W-PAD, footerY); ctx.stroke();
 
   const labels = { watercolor:'水彩 Watercolor', dreamcore:'梦核 Dreamcore', inkwash:'水墨 Ink Wash', pixel:'像素 Pixel Art', ghibli:'吉卜力 Ghibli', pencil:'素描 Pencil' };
-  ctx.fillStyle = 'rgba(232,224,212,.2)';
-  ctx.font = 'italic 14px "Cormorant Garamond", serif';
+  ctx.fillStyle = 'rgba(232,224,212,.35)';
+  ctx.font = 'italic 15px "Cormorant Garamond", serif';
   ctx.textAlign = 'center';
-  ctx.fillText(labels[selectedStyle] || selectedStyle, W/2, footerY + 35);
-  ctx.fillStyle = 'rgba(232,224,212,.1)';
-  ctx.font = '12px "Cormorant Garamond", serif';
-  ctx.fillText('梦境画卷 · DREAMSCAPE', W/2, footerY + 58);
+  ctx.fillText(labels[selectedStyle] || selectedStyle, W/2, footerY + 45);
 
   const link = document.createElement('a');
-  link.download = 'dreamscape-' + Date.now() + '.png';
-  link.href = canvas.toDataURL('image/png');
+  link.download = 'dreamscape-' + Date.now() + '.jpg';
+  link.href = canvas.toDataURL('image/jpeg', 0.95);
   link.click();
+  } finally {
+    shareBtn.textContent = t().shareBtn;
+    shareBtn.disabled = false;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -733,9 +729,12 @@ function generatePlaceholderImage(index) {
 // ═══════════════════════════════════════════════════════════
 
 // Rotating placeholders
-let phIdx = Math.floor(Math.random() * PLACEHOLDERS.length);
-dreamInput.placeholder = PLACEHOLDERS[phIdx];
-setInterval(() => { phIdx = (phIdx + 1) % PLACEHOLDERS.length; dreamInput.placeholder = PLACEHOLDERS[phIdx]; }, 5000);
+let phIdx = 0;
+function updatePlaceholder() { const ph = t().placeholders; dreamInput.placeholder = ph[phIdx % ph.length]; }
+updatePlaceholder();
+let placeholderInterval = setInterval(() => { phIdx++; updatePlaceholder(); }, 5000);
+dreamInput.addEventListener('focus', () => { clearInterval(placeholderInterval); });
+dreamInput.addEventListener('blur', () => { placeholderInterval = setInterval(() => { phIdx++; updatePlaceholder(); }, 5000); });
 
 // Style selector
 document.querySelectorAll('.style-btn').forEach(btn => {
@@ -755,7 +754,8 @@ beginBtn.addEventListener('click', async () => {
   if (!dreamText) return;
 
   showPhase('loading-phase');
-  setLoadingProgress('坠入梦境…', 'falling into the dream…', 5);
+  const lm = t().loadingMessages;
+  setLoadingProgress(lm[0][0], '', 5);
 
   let script;
   try {
@@ -767,10 +767,10 @@ beginBtn.addEventListener('click', async () => {
 
   dreamTitle = script.title;
   visualThread = script.visual_thread || '';
-  setLoadingProgress('梦境成形中…', 'the dream takes shape…', 15);
+  setLoadingProgress(lm[1][0], '', 15);
   scenes = script.scenes.map(s => ({ ...s, dataUrl: null, imgLoading: false }));
 
-  setLoadingProgress('梦的轮廓浮现…', 'shapes emerging from the mist…', 50);
+  setLoadingProgress(lm[2][0], '', 50);
   try {
     scenes[0].imgLoading = true;
     scenes[0].dataUrl = await generateImage(scenes[0].image_prompt);
@@ -787,15 +787,17 @@ beginBtn.addEventListener('click', async () => {
 // Test mode
 $('test-btn').addEventListener('click', async () => {
   showPhase('loading-phase');
-  setLoadingProgress('坠入梦境…', 'falling into the dream…', 5);
+  const lm = t().loadingMessages;
+  setLoadingProgress(lm[0][0], '', 5);
 
-  const script = localFallback(dreamInput.value.trim() || '我梦见自己在一片森林里走着');
+  const fallbackInput = currentLang === 'zh' ? '我梦见自己在一片森林里走着' : 'I dreamt I was walking through a forest';
+  const script = localFallback(dreamInput.value.trim() || fallbackInput);
   dreamTitle = script.title;
   scenes = script.scenes.map(s => ({ ...s, dataUrl: null, imgLoading: true }));
 
   for (let i = 0; i < scenes.length; i++) {
-    const msg = LOADING_MESSAGES[i % LOADING_MESSAGES.length];
-    setLoadingProgress(msg[0], msg[1], 15 + Math.round((i / scenes.length) * 80));
+    const msg = lm[(i + 2) % lm.length];
+    setLoadingProgress(msg[0], '', 15 + Math.round((i / scenes.length) * 80));
     await new Promise(r => setTimeout(r, 300));
     scenes[i].dataUrl = generatePlaceholderImage(i);
     scenes[i].imgLoading = false;
@@ -808,6 +810,7 @@ $('test-btn').addEventListener('click', async () => {
 $('ctrl-play').addEventListener('click', () => {
   isPlaying = !isPlaying;
   $('ctrl-play').innerHTML = isPlaying ? '&#10074;&#10074;' : '&#9654;';
+  $('ctrl-play').setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
   if (isPlaying) {
     if (currentScene < 0) playScene(0);
     else if (currentScene >= scenes.length) startCinematic();
@@ -838,11 +841,83 @@ $('btn-restart').addEventListener('click', () => {
   scenes = [];
   dreamTitle = '';
   dreamInput.value = '';
+  interpretationCache = null;
+  $('interpret-panel').style.display = 'none';
   showPhase('input-phase');
   beginBtn.disabled = true;
 });
 
 $('btn-share').addEventListener('click', generatePoster);
+
+// Dream interpretation
+let interpretationCache = null;
+$('btn-interpret').addEventListener('click', async () => {
+  const panel = $('interpret-panel');
+  const textEl = $('interpret-text');
+
+  // Toggle if already showing
+  if (panel.style.display !== 'none' && interpretationCache) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  // Show panel with loading state
+  panel.style.display = 'block';
+  textEl.textContent = t().interpretLoading;
+
+  if (interpretationCache) {
+    textEl.textContent = interpretationCache;
+    return;
+  }
+
+  // Collect dream story text
+  const storyText = scenes.map((s, i) => s.lines?.join(' ')).join('\n');
+  const isCN = /[\u4e00-\u9fff]/.test(storyText);
+
+  const prompt = `You are a dream interpreter combining psychology (Jung, Freud) and cultural symbolism. The user had this dream:
+
+${storyText}
+
+Provide a warm, insightful interpretation in 3-4 short paragraphs. Cover:
+1. Key symbols and what they might represent
+2. Emotional undertones and what they suggest
+3. A gentle, encouraging takeaway
+
+${t().interpretLang}
+Be warm and thoughtful, not clinical. No bullet points or headers — write as flowing paragraphs.`;
+
+  try {
+    const resp = await fetch('/api/story', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.8, maxOutputTokens: 1500 },
+      }),
+    });
+    const data = await resp.json();
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const text = parts.map(p => p.text || '').join('');
+    interpretationCache = text.trim();
+    textEl.textContent = interpretationCache;
+  } catch (e) {
+    textEl.textContent = t().interpretFail;
+  }
+});
+
+// Loading back button
+$('loading-back-btn').addEventListener('click', () => { showPhase('input-phase'); });
+
+// Click cinema text to reveal all lines in current scene
+$('cinema-text').addEventListener('click', () => {
+  const lines = document.querySelectorAll('#cinema-text .scene-line:not(.visible)');
+  if (!lines.length) return;
+  clearTimeout(lineTimer);
+  lines.forEach(el => el.classList.add('visible'));
+  currentLine = document.querySelectorAll('#cinema-text .scene-line').length;
+  updateProgressBar();
+  sceneTimer = setTimeout(() => { if (isPlaying) playScene(currentScene + 1); }, 2000);
+});
 
 // Keyboard
 document.addEventListener('keydown', (e) => {

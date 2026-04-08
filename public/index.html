@@ -53,12 +53,14 @@
       </div>
       <p class="footer-note">Imagen 4.0 · Gemini AI</p>
     </div>
+    <button id="lang-switch" style="position:absolute;top:24px;right:24px;z-index:10;background:rgba(255,255,255,.3);border:1px solid rgba(140,130,110,.15);border-radius:20px;padding:6px 18px;color:#8a8278;font-family:'Cormorant Garamond',serif;font-size:.72rem;letter-spacing:.1em;cursor:pointer;transition:all .4s;backdrop-filter:blur(4px);" onclick="switchLang()">EN</button>
   </div>
 
   <!-- LOADING PHASE -->
   <div id="loading-phase" class="phase">
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
+    <button id="loading-back-btn" style="position:absolute;top:24px;left:24px;z-index:10;background:none;border:1px solid rgba(140,130,110,.15);border-radius:20px;padding:6px 16px;color:#aaa;font-family:'Cormorant Garamond',serif;font-size:.72rem;letter-spacing:.08em;cursor:pointer;transition:all .4s;backdrop-filter:blur(4px);">← 返回 Back</button>
     <div style="text-align:center;position:relative;z-index:2;">
       <div style="position:relative;width:100px;height:100px;margin:0 auto 32px;">
         <svg viewBox="0 0 100 100" style="width:100%;height:100%;animation:float 3s ease-in-out infinite;">
@@ -89,7 +91,7 @@
         <p style="font-family:'Cormorant Garamond',serif;font-size:.78rem;color:rgba(232,224,212,.4);letter-spacing:.28em;font-style:italic;">A DREAM VISUALIZED</p>
       </div>
       <div id="cinema-text" style="position:absolute;bottom:clamp(100px,15vh,160px);left:clamp(30px,6vw,80px);right:clamp(30px,6vw,80px);max-width:600px;z-index:10;"></div>
-      <div id="scene-counter" style="position:absolute;top:28px;right:32px;font-family:'Cormorant Garamond',serif;font-size:.72rem;color:rgba(232,224,212,.3);letter-spacing:.15em;z-index:20;"></div>
+      <div id="scene-counter" style="position:absolute;top:28px;right:32px;font-family:'Cormorant Garamond',serif;font-size:.72rem;color:rgba(232,224,212,.5);letter-spacing:.15em;z-index:20;"></div>
     </div>
 
     <!-- Controls -->
@@ -99,9 +101,9 @@
         <div id="progress-dots" style="position:absolute;top:-4px;left:0;right:0;height:10px;display:flex;justify-content:space-between;align-items:center;pointer-events:none;"></div>
       </div>
       <div style="display:flex;gap:24px;align-items:center;">
-        <button id="ctrl-prev" class="ctrl-btn" title="Previous">&#x2039;</button>
-        <button id="ctrl-play" class="ctrl-btn" title="Play/Pause" style="font-size:.7rem;">&#10074;&#10074;</button>
-        <button id="ctrl-next" class="ctrl-btn" title="Next">&#x203a;</button>
+        <button id="ctrl-prev" class="ctrl-btn" title="Previous" aria-label="Previous scene">&#x2039;</button>
+        <button id="ctrl-play" class="ctrl-btn" title="Play/Pause" aria-label="Pause" style="font-size:.7rem;">&#10074;&#10074;</button>
+        <button id="ctrl-next" class="ctrl-btn" title="Next" aria-label="Next scene">&#x203a;</button>
       </div>
     </div>
 
@@ -110,12 +112,19 @@
       <p id="end-title" style="font-family:'Ma Shan Zheng','Cormorant Garamond',serif;font-size:clamp(1.6rem,4vw,2.6rem);color:#e8e0d4;letter-spacing:.1em;"></p>
       <p style="font-family:'Cormorant Garamond',serif;font-size:clamp(.9rem,1.6vw,1.2rem);font-weight:300;font-style:italic;color:rgba(232,224,212,.4);letter-spacing:.06em;">— 梦醒了，画还在 —</p>
       <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;justify-content:center;">
+        <button id="btn-interpret" class="end-btn">解梦 · INTERPRET</button>
         <button id="btn-share" class="end-btn">分享海报 · SHARE</button>
         <button id="btn-restart" class="end-btn">再做一个梦 · DREAM AGAIN</button>
+      </div>
+      <!-- Dream interpretation panel -->
+      <div id="interpret-panel" style="display:none;max-width:560px;width:90%;margin-top:8px;padding:28px 32px;background:rgba(232,224,212,.05);border:1px solid rgba(232,224,212,.08);border-radius:16px;backdrop-filter:blur(8px);">
+        <p id="interpret-text" style="font-family:'Cormorant Garamond','Noto Serif SC',serif;font-size:.92rem;line-height:2.2;color:rgba(232,224,212,.7);"></p>
       </div>
     </div>
   </div>
 
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
+  <script>applyLanguage();</script>
 </body>
 </html>
