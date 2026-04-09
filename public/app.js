@@ -522,6 +522,18 @@ function showEndScreen() {
   $('end-title').textContent = dreamTitle;
   $('cinema-end').style.display = 'flex';
   $('progress-bar-fill').style.width = '100%';
+  // Auto-render poster preview
+  renderPosterPreview();
+}
+
+let posterDataUrl = null;
+async function renderPosterPreview() {
+  $('poster-img').style.display = 'none';
+  posterDataUrl = await generatePosterDataUrl();
+  if (posterDataUrl) {
+    $('poster-img').src = posterDataUrl;
+    $('poster-img').style.display = 'block';
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -691,14 +703,23 @@ async function generatePoster() {
   ctx.textAlign = 'center';
   ctx.fillText(labels[selectedStyle] || selectedStyle, W/2, footerY + 45);
 
-  const link = document.createElement('a');
-  link.download = 'dreamscape-' + Date.now() + '.jpg';
-  link.href = canvas.toDataURL('image/jpeg', 0.95);
-  link.click();
+  return canvas.toDataURL('image/jpeg', 0.95);
   } finally {
     shareBtn.textContent = t().shareBtn;
     shareBtn.disabled = false;
   }
+}
+
+async function generatePosterDataUrl() {
+  return await generatePoster();
+}
+
+function downloadPoster() {
+  if (!posterDataUrl) return;
+  const link = document.createElement('a');
+  link.download = 'dreamscape-' + Date.now() + '.jpg';
+  link.href = posterDataUrl;
+  link.click();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -851,7 +872,7 @@ $('btn-restart').addEventListener('click', () => {
   beginBtn.disabled = true;
 });
 
-$('btn-share').addEventListener('click', generatePoster);
+$('btn-share').addEventListener('click', downloadPoster);
 
 // Dream interpretation
 let interpretationCache = null;
