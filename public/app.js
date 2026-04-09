@@ -540,7 +540,8 @@ async function generatePoster() {
   const W = 1080;
   const PAD = 80;
   const IMG_W = W - PAD * 2;
-  const IMG_H = 380;
+  const isPortrait = window.innerWidth < window.innerHeight;
+  const IMG_H = isPortrait ? 560 : 380;
   const TEXT_GAP = 28;
   const LINE_H = 30;
   const SCENE_GAP = 56;
