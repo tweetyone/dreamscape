@@ -16,6 +16,23 @@ body {
 @keyframes blobMove1 { 0%,100% { transform:translate(0,0) scale(1); } 33% { transform:translate(40px,-30px) scale(1.1); } 66% { transform:translate(-20px,20px) scale(.95); } }
 @keyframes blobMove2 { 0%,100% { transform:translate(0,0) scale(1); } 33% { transform:translate(-30px,40px) scale(1.05); } 66% { transform:translate(20px,-10px) scale(.9); } }
 @keyframes grainShift { 0% { transform:translate(0,0); } 10% { transform:translate(-2%,-2%); } 30% { transform:translate(-3%,1%); } 50% { transform:translate(-1%,2%); } 70% { transform:translate(-2%,1%); } 100% { transform:translate(0,0); } }
+@keyframes particleFloat {
+  0%   { transform:translateY(0) translateX(0) scale(1); opacity:0; }
+  10%  { opacity:1; }
+  50%  { transform:translateY(-45vh) translateX(15px) scale(1.2); opacity:.7; }
+  90%  { opacity:0; }
+  100% { transform:translateY(-90vh) translateX(-10px) scale(.8); opacity:0; }
+}
+@keyframes particleDrift {
+  0%   { transform:translateY(0) translateX(0) scale(.8); opacity:0; }
+  15%  { opacity:.8; }
+  50%  { transform:translateY(-50vh) translateX(-20px) scale(1.1); opacity:.5; }
+  85%  { opacity:0; }
+  100% { transform:translateY(-95vh) translateX(10px) scale(.6); opacity:0; }
+}
+@keyframes softGlow { 0%,100% { opacity:.3; filter:blur(1px); } 50% { opacity:.8; filter:blur(2px); } }
+@keyframes breathe { 0%,100% { box-shadow:0 0 8px rgba(232,224,212,.05); } 50% { box-shadow:0 0 16px rgba(232,224,212,.12); } }
+@keyframes scenePulse { 0% { opacity:0; } 30% { opacity:.12; } 100% { opacity:0; } }
 
 /* ═══════ GRAIN OVERLAY ═══════ */
 .grain {
@@ -232,15 +249,41 @@ html[lang="zh"] #end-title {
 }
 
 /* ═══════ CINEMATIC PHASE ═══════ */
+
+/* Floating particles container */
+.cinema-particles {
+  position:fixed; inset:0; z-index:6; pointer-events:none; overflow:hidden;
+}
+.cinema-particle {
+  position:absolute; border-radius:50%; pointer-events:none;
+  background:radial-gradient(circle, rgba(232,224,212,.6) 0%, rgba(232,224,212,.1) 60%, transparent 100%);
+}
+
+/* Cinematic vignette overlay */
+.cinema-vignette {
+  position:absolute; inset:0; z-index:5; pointer-events:none;
+  background:radial-gradient(ellipse at center, transparent 45%, rgba(10,10,8,.35) 75%, rgba(10,10,8,.7) 100%);
+}
+
+/* Scene transition glow pulse */
+.cinema-glow-pulse {
+  position:absolute; inset:0; z-index:5; pointer-events:none; opacity:0;
+  background:radial-gradient(ellipse at center, rgba(232,224,212,.08) 0%, transparent 70%);
+}
+.cinema-glow-pulse.active { animation:scenePulse 2s ease-out forwards; }
+
 .scene-line {
   font-family:'Cormorant Garamond','EB Garamond','Noto Serif SC',serif;
   font-size:clamp(1rem,1.6vw,1.25rem); line-height:2.2; font-weight:300;
   color:rgba(232,224,212,.88); opacity:0; transform:translateY(14px);
-  transition:opacity 1.5s ease, transform 1.5s ease; margin-bottom:0;
+  transition:opacity 1.5s ease, transform 1.5s ease, text-shadow 2s ease; margin-bottom:0;
   text-shadow:0 2px 16px rgba(0,0,0,.4);
   letter-spacing:.02em;
 }
-.scene-line.visible { opacity:1; transform:translateY(0); }
+.scene-line.visible {
+  opacity:1; transform:translateY(0);
+  text-shadow:0 2px 16px rgba(0,0,0,.4), 0 0 30px rgba(232,224,212,.08), 0 0 60px rgba(200,190,170,.04);
+}
 
 .ctrl-btn {
   background:rgba(255,255,255,.03);
@@ -251,12 +294,14 @@ html[lang="zh"] #end-title {
   display:flex; align-items:center; justify-content:center;
   font-family:system-ui;
   backdrop-filter:blur(8px);
+  animation:breathe 4s ease-in-out infinite;
 }
 .ctrl-btn:hover {
   border-color:rgba(232,224,212,.25);
   color:rgba(232,224,212,.7);
   background:rgba(255,255,255,.06);
   transform:scale(1.08);
+  animation:none;
 }
 
 .end-btn {

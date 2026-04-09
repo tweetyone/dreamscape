@@ -340,6 +340,58 @@ function coverBrushCanvas() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// FLOATING PARTICLES (dreamy fireflies)
+// ═══════════════════════════════════════════════════════════
+let particleInterval = null;
+
+function spawnParticle() {
+  const container = $('cinema-particles');
+  if (!container) return;
+
+  const particle = document.createElement('div');
+  particle.className = 'cinema-particle';
+
+  const size = 2 + Math.random() * 4;
+  const x = Math.random() * 100;
+  const duration = 8 + Math.random() * 12;
+  const delay = Math.random() * 2;
+  const useAlt = Math.random() > 0.5;
+
+  particle.style.cssText = `
+    width:${size}px; height:${size}px;
+    left:${x}%; bottom:-${size}px;
+    animation:${useAlt ? 'particleDrift' : 'particleFloat'} ${duration}s ${delay}s ease-in-out forwards;
+  `;
+
+  container.appendChild(particle);
+  setTimeout(() => particle.remove(), (duration + delay) * 1000);
+}
+
+function startParticles() {
+  stopParticles();
+  // Spawn a batch initially
+  for (let i = 0; i < 8; i++) setTimeout(spawnParticle, i * 400);
+  // Continue spawning
+  particleInterval = setInterval(spawnParticle, 1200);
+}
+
+function stopParticles() {
+  clearInterval(particleInterval);
+  particleInterval = null;
+  const container = $('cinema-particles');
+  if (container) container.innerHTML = '';
+}
+
+// Scene transition glow pulse
+function triggerGlowPulse() {
+  const el = $('cinema-glow-pulse');
+  if (!el) return;
+  el.classList.remove('active');
+  void el.offsetWidth; // force reflow
+  el.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════
 // LAZY IMAGE LOADING
 // ═══════════════════════════════════════════════════════════
 function lazyLoadImage(index) {
@@ -404,6 +456,7 @@ function startCinematic() {
   $('cinema-title').style.opacity = '1';
   $('scene-counter').textContent = '';
   $('cinema-text').innerHTML = '';
+  startParticles();
 
   if (scenes[0]?.dataUrl) {
     const layer = $('cinema-img-a');
@@ -429,6 +482,7 @@ function playScene(index) {
 
   $('cinema-title').style.opacity = '0';
   $('scene-counter').textContent = (index + 1) + ' / ' + scenes.length;
+  triggerGlowPulse();
   document.querySelectorAll('#progress-dots div').forEach((d, i) => {
     d.style.background = i === index ? 'rgba(232,224,212,.8)' : i < index ? 'rgba(232,224,212,.5)' : 'rgba(232,224,212,.3)';
   });
@@ -518,6 +572,7 @@ function updateProgressBar() {
 function showEndScreen() {
   clearTimeout(lineTimer);
   clearTimeout(sceneTimer);
+  stopParticles();
   currentScene = scenes.length;
   $('end-title').textContent = dreamTitle;
   $('cinema-end').style.display = 'flex';
@@ -863,6 +918,7 @@ $('btn-restart').addEventListener('click', () => {
   $('cinema-img-b').style.opacity = '0';
   clearTimeout(lineTimer);
   clearTimeout(sceneTimer);
+  stopParticles();
   scenes = [];
   dreamTitle = '';
   dreamInput.value = '';
