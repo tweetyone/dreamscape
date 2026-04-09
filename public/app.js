@@ -92,7 +92,7 @@ async function generateImage(prompt, retries = 2) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           instances: [{ prompt: fullPrompt }],
-          parameters: { sampleCount: 1, aspectRatio: '16:9' },
+          parameters: { sampleCount: 1, aspectRatio: window.innerWidth > window.innerHeight ? '16:9' : '9:16' },
         }),
       });
       if (resp.status === 429) {
