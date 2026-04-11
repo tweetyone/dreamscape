@@ -913,7 +913,7 @@ Rules:
 - Do NOT repeat or summarize the dream content back
 - Jump straight to interpretation: what the key symbols likely mean, and one real-life insight
 - Plain language only. No "原型", "潜意识", "象征着", "inner self", "subconscious"
-- ${t().interpretLang}`;
+- ${/[\u4e00-\u9fff]/.test(text) ? 'Respond entirely in Chinese.' : 'Respond entirely in English.'}`;
 }
 
 async function runInterpretation(customPrompt) {
