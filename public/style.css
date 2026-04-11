@@ -223,7 +223,38 @@ html[lang="zh"] #input-phase h1 {
   flex-direction:column; gap:32px; position:relative; overflow:hidden;
   background:linear-gradient(180deg, #edeae4 0%, #e4e0d8 40%, #ddd8cf 100%);
 }
-#loading-phase svg circle { transition:stroke-dashoffset 0.8s ease; }
+#loading-ring { transition:stroke-dashoffset 0.8s ease; }
+
+/* Loading orbit */
+.loading-orbit { animation:float 5s ease-in-out infinite; }
+.loading-moon-crescent { animation:moonBreathe 4s ease-in-out infinite; }
+@keyframes moonBreathe {
+  0%,100% { opacity:.95; }
+  50% { opacity:.75; }
+}
+
+/* Orbiting dots */
+.orbit-dot { transform-origin:70px 70px; }
+.orbit-dot-1 { animation:orbit1 6s linear infinite; }
+.orbit-dot-2 { animation:orbit2 9s linear infinite; }
+.orbit-dot-3 { animation:orbit3 7.5s linear infinite; }
+@keyframes orbit1 { to { transform:rotate(360deg); } }
+@keyframes orbit2 { to { transform:rotate(-360deg); } }
+@keyframes orbit3 { to { transform:rotate(540deg); } }
+
+/* Drifting particles */
+.loading-particles { position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
+.loading-particle {
+  position:absolute; width:3px; height:3px; border-radius:50%;
+  background:radial-gradient(circle, rgba(200,170,100,.7) 0%, transparent 70%);
+  animation:particleRise linear infinite;
+}
+@keyframes particleRise {
+  0%   { transform:translateY(0) translateX(0) scale(.5); opacity:0; }
+  10%  { opacity:.9; }
+  85%  { opacity:.7; }
+  100% { transform:translateY(-110vh) translateX(40px) scale(1.1); opacity:0; }
+}
 
 /* Chinese font overrides — Ma Shan Zheng only for Chinese titles */
 html[lang="zh"] #cinema-title-text,

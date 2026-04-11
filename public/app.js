@@ -48,6 +48,23 @@ const imageLoadPromises = {};
 // ═══════════════════════════════════════════════════════════
 // DOM REFS
 // ═══════════════════════════════════════════════════════════
+// Generate loading particles
+(function initLoadingParticles() {
+  const container = document.getElementById('loading-particles');
+  if (!container) return;
+  for (let i = 0; i < 25; i++) {
+    const p = document.createElement('div');
+    p.className = 'loading-particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.top = (60 + Math.random() * 50) + '%';
+    p.style.width = (2 + Math.random() * 3) + 'px';
+    p.style.height = p.style.width;
+    p.style.animationDuration = (12 + Math.random() * 18) + 's';
+    p.style.animationDelay = -(Math.random() * 20) + 's';
+    container.appendChild(p);
+  }
+})();
+
 const dreamInput = document.getElementById('dream-input');
 const beginBtn = document.getElementById('begin-btn');
 const brushCanvas = document.getElementById('brush-canvas');
@@ -66,11 +83,22 @@ function showPhase(id) {
   document.body.style.overflow = isCinematic ? 'hidden' : '';
 }
 
+function showQuotaError() {
+  const msg = t().quotaError;
+  const [line1, line2] = msg.split('\n');
+  $('loading-step').textContent = line1;
+  $('loading-detail').textContent = line2 || '';
+  $('loading-pct').textContent = '';
+  // Dim the ring
+  $('loading-ring').style.strokeDashoffset = 365;
+  $('loading-ring').style.stroke = 'rgba(200,80,80,.4)';
+}
+
 function setLoadingProgress(step, detail, pct) {
   $('loading-step').textContent = step;
   $('loading-detail').textContent = detail;
   if (pct !== undefined) {
-    const offset = 264 - (264 * pct / 100);
+    const offset = 365 - (365 * pct / 100);
     $('loading-ring').style.strokeDashoffset = offset;
     $('loading-pct').textContent = Math.round(pct) + '%';
   }
@@ -960,7 +988,11 @@ beginBtn.addEventListener('click', async () => {
   try {
     script = await generateStory(dreamText);
   } catch (e) {
-    console.warn('Gemini API failed, using fallback:', e.message);
+    console.warn('Gemini API failed:', e.message);
+    if (e.message.includes('429') || e.message.includes('RESOURCE_EXHAUSTED')) {
+      showQuotaError();
+      return;
+    }
     script = localFallback(dreamText);
   }
 
@@ -977,6 +1009,10 @@ beginBtn.addEventListener('click', async () => {
   } catch (err) {
     console.warn('Image 0 failed:', err.message);
     scenes[0].imgLoading = false;
+    if (err.message.includes('429') || err.message.includes('RESOURCE_EXHAUSTED')) {
+      showQuotaError();
+      return;
+    }
   }
 
   startCinematic();
