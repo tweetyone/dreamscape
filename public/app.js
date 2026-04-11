@@ -578,7 +578,7 @@ const POSTER_THEMES = {
     title: '#3a3128', subtitle: '#8a7868', divider: 'rgba(180,140,90,.3)',
     textLabel: 'rgba(90,70,50,.4)', textColor: 'rgba(60,50,40,.8)',
     accent: '#a8824a', watermark: 'rgba(90,70,50,.35)',
-    titleFont: '"Ma Shan Zheng","Cormorant Garamond",serif',
+    titleFont: '"Ma Shan Zheng","Noto Serif SC","Cormorant Garamond",serif',
     decoration: 'watercolor',
   },
   dreamcore: {
@@ -594,7 +594,7 @@ const POSTER_THEMES = {
     title: '#1a1a1a', subtitle: '#555', divider: 'rgba(0,0,0,.15)',
     textLabel: 'rgba(0,0,0,.25)', textColor: 'rgba(0,0,0,.75)',
     accent: '#c83c3c', watermark: 'rgba(0,0,0,.35)',
-    titleFont: '"Ma Shan Zheng","Cormorant Garamond",serif',
+    titleFont: '"ZCOOL XiaoWei","Noto Serif SC","Cormorant Garamond",serif',
     decoration: 'inkwash',
   },
   pixel: {
@@ -610,7 +610,7 @@ const POSTER_THEMES = {
     title: '#2a3d2a', subtitle: '#6a7858', divider: 'rgba(80,100,60,.3)',
     textLabel: 'rgba(60,80,40,.4)', textColor: 'rgba(40,60,30,.85)',
     accent: '#8da650', watermark: 'rgba(60,80,40,.35)',
-    titleFont: '"Ma Shan Zheng","Cormorant Garamond",serif',
+    titleFont: '"Ma Shan Zheng","Noto Serif SC","Cormorant Garamond",serif',
     decoration: 'ghibli',
   },
   ukiyoe: {
@@ -618,7 +618,7 @@ const POSTER_THEMES = {
     title: '#1a1a1a', subtitle: '#444', divider: 'rgba(0,0,0,.2)',
     textLabel: 'rgba(0,0,0,.3)', textColor: 'rgba(0,0,0,.8)',
     accent: '#c8333a', watermark: 'rgba(0,0,0,.35)',
-    titleFont: '"Ma Shan Zheng","Cormorant Garamond",serif',
+    titleFont: '"Ma Shan Zheng","Noto Serif SC","Cormorant Garamond",serif',
     decoration: 'ukiyoe',
   },
   cyberpunk: {
