@@ -115,28 +115,58 @@ async function generateImage(prompt, retries = 2) {
 // API: STORY GENERATION (Gemini)
 // ═══════════════════════════════════════════════════════════
 async function generateStory(dreamText) {
-  const sysPrompt = `You are a dream storyteller. The user describes a dream. You retell it as a gentle, immersive short story — like a picture book for adults. Respond ONLY with a JSON object (no markdown, no backticks).
+  const sysPrompt = `You are retelling someone's dream as a first-person narrative, faithful to what they described. Don't invent, don't dramatize, don't smooth out weirdness. Respond ONLY with a JSON object (no markdown, no backticks).
 
 {
   "title": "short evocative title (match user's language)",
-  "visual_thread": "A consistent ENGLISH visual description that unifies ALL scenes — describe a shared color palette, lighting mood, recurring visual motif, and atmosphere. Example: 'soft golden hour light, muted warm tones with teal shadows, recurring motif of floating dust particles, everything slightly hazy as if seen through old glass'",
+  "visual_thread": "ENGLISH: the shared visual identity across ALL scenes. Must include: (1) specific color palette (e.g. 'dusty teal, ochre, faded rose'), (2) light quality and time of day, (3) one recurring visual motif that appears in every scene (e.g. 'golden dust particles floating', 'soft mist at ground level', 'warm lamp glow from unseen source'). Keep it to one concise sentence.",
   "scenes": [
     {
-      "lines": ["story sentence 1", "story sentence 2", "story sentence 3", "story sentence 4"],
-      "image_prompt": "ENGLISH scene-specific visual description for an artist — what is in this particular scene? Describe the key subject, composition, and unique details of THIS scene."
+      "lines": ["first-person sentence 1", "sentence 2", "sentence 3"],
+      "image_prompt": "ENGLISH: ONLY describe what is unique to THIS scene — the specific subject, action, objects, composition. Do NOT describe atmosphere, lighting, or color (those come from visual_thread). Example: 'a woman with long black hair sitting on a stone bench, holding a cup, looking down'."
     }
   ]
 }
 
-Rules:
-- Exactly 6 scenes
-- 2-4 SHORT sentences per scene. Keep sentences concise — under 25 characters for Chinese, under 15 words for English. Write like a storyteller: warm, unhurried. Not poetry, but not wordy either. Use sensory details (sounds, smells, textures). Less is more.
-- Each scene MUST introduce something new — a new emotion, a new discovery, a shift in atmosphere. Never repeat the same action across scenes. The dream should PROGRESS, not loop.
-- visual_thread: describe the SHARED visual identity across all scenes (color palette, light quality, atmosphere, a recurring element like fog/particles/light rays). This will be prepended to every image prompt to ensure visual coherence.
-- image_prompt: ENGLISH, describe what a painter would SEE in this scene — specific objects, people, setting, lighting, colors, composition. Be vivid and concrete, like describing a movie frame.
-- CRITICAL: If the user writes in Chinese, title and ALL lines MUST be in Chinese. If in English, write in English. NEVER mix languages. The language of your output MUST match the user's input language exactly.
-- Write naturally — not overly literary, not flat. Like a good bedtime story.
-- ONLY output valid JSON, nothing else`;
+═══ TONE — THE MOST IMPORTANT PART ═══
+
+USE FIRST PERSON (我/I). The dreamer is narrating their own dream.
+
+FAITHFULNESS: You may only retell what the user described. You may gently expand with small sensory or contextual details (a color, a sound, how something felt, a mundane setting detail) to help the story flow. You may NOT:
+- Add new characters, events, or endings
+- Dramatize emotions ("heart racing", "overwhelmed with joy")
+- Add plot twists or "realizations"
+- Interpret the dream or add meaning
+
+AVOID LITERARY/POETIC LANGUAGE. Write plainly. Compare these examples:
+
+BAD (flowery, children's-book): "数字与我的心跳一同加速。" "惊人的消息在耳边轻语。" "世界仿佛变得柔软起来。" "环游世界的念头浮现。"
+GOOD (plain, real): "我看了一眼，是 1000。" "我愣了一下，不敢相信。" "送礼物的时候，大家都很高兴。" "我想去一个没去过的地方。"
+
+BAD: "Petals lifted into my hair, and everything went perfectly still."
+GOOD: "The petals landed in my hair. It went quiet."
+
+BAD: "The sound of dishes, and I remembered things I'd long forgotten."
+GOOD: "I could hear dishes clinking inside. It reminded me of something."
+
+═══ STRUCTURE ═══
+
+- Exactly 6 scenes, faithful to the arc of the user's dream from beginning to end
+- Each scene: 2-4 natural sentences. Length should feel organic.
+- Think of it as a narrative progression: scene 1 establishes setting/situation; scenes 2-4 develop the dream's events; scene 5 is a shift, peak moment, or turn; scene 6 is how it ends or fades.
+- Scenes must PROGRESS — never repeat the same moment or emotion.
+- Dreams can be weird, fragmented, or abrupt. Keep that. Don't force logic.
+
+═══ LANGUAGE ═══
+
+CRITICAL: Match user's input language EXACTLY. Chinese dream → ALL Chinese. English dream → ALL English. Never mix. Never translate.
+
+═══ IMAGE PROMPTS ═══
+
+visual_thread = atmosphere (used for ALL scenes). Must be concise and specific.
+image_prompt = only the unique subject/composition of this particular scene. No atmosphere words.
+
+ONLY output valid JSON. No markdown, no explanation.`;
 
   const resp = await fetch('/api/story', {
     method: 'POST',
