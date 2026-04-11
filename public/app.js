@@ -172,7 +172,7 @@ ONLY output valid JSON. No markdown, no explanation.`;
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: sysPrompt + '\n\nUser dream: ' + dreamText.trim() }] }],
-      generationConfig: { temperature: 0.9, maxOutputTokens: 8000 },
+      generationConfig: { temperature: 0.9, maxOutputTokens: 12000 },
     }),
   });
   if (!resp.ok) throw new Error('Gemini API error: ' + resp.status);
@@ -186,7 +186,11 @@ ONLY output valid JSON. No markdown, no explanation.`;
   try {
     return JSON.parse(cleaned);
   } catch {
-    let repaired = cleaned.replace(/,?\s*"[^"]*$/, '').replace(/,\s*$/, '');
+    // Robust repair: truncate at last complete bracket, balance braces
+    let repaired = cleaned;
+    const lastComplete = Math.max(repaired.lastIndexOf('}'), repaired.lastIndexOf(']'));
+    if (lastComplete > 0) repaired = repaired.slice(0, lastComplete + 1);
+    repaired = repaired.replace(/,(\s*[\]}])/g, '$1');
     const opens = (repaired.match(/\[/g) || []).length - (repaired.match(/\]/g) || []).length;
     const braces = (repaired.match(/\{/g) || []).length - (repaired.match(/\}/g) || []).length;
     for (let i = 0; i < opens; i++) repaired += ']';
