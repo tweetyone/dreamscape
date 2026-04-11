@@ -122,7 +122,7 @@ function applyLanguage() {
 
   // Cinematic phase
   document.querySelector('#cinema-title p').textContent = tx.visualized;
-  document.querySelector('#cinema-end > p:nth-child(2)').textContent = tx.endLine;
+  document.getElementById('end-subtitle').textContent = tx.endLine;
   document.getElementById('btn-interpret').textContent = tx.interpretBtn;
   document.getElementById('btn-share').textContent = tx.shareBtn;
   document.getElementById('btn-restart').textContent = tx.restartBtn;
