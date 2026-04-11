@@ -9,7 +9,6 @@ const STYLE_SUFFIXES = {
   inkwash: ', traditional Chinese ink wash painting, sumi-e style, monochrome black ink on rice paper, flowing brushstrokes, minimalist composition, misty atmosphere, zen aesthetic, no text, no frame',
   pixel: ', pixel art style, 16-bit retro game aesthetic, dreamy color palette, soft pixels, nostalgic atmosphere, detailed pixel scenery, dithering, no text, no frame',
   ghibli: ', Studio Ghibli anime style, warm hand-painted background art, lush green landscapes, soft cel shading, Hayao Miyazaki aesthetic, golden afternoon light, detailed clouds and foliage, gentle and nostalgic atmosphere, animated film still, no text, no frame',
-  pencil: ', pencil sketch on cream paper, delicate graphite hatching and cross-hatching, visible paper grain, loose expressive line work, areas left unfinished fading into blank paper, chiaroscuro light and shadow, hand-drawn illustration feel, no text, no frame',
   ukiyoe: ', traditional Japanese ukiyo-e woodblock print style, bold flat color areas, strong black outlines, wave patterns, Hokusai and Hiroshige influence, dramatic composition, stylized clouds and water, decorative natural elements, Edo period aesthetic, no text, no frame',
   cyberpunk: ', cyberpunk neon cityscape, rain-soaked streets reflecting neon signs, deep blue and magenta and electric cyan color palette, volumetric fog, holographic elements, Blade Runner atmosphere, futuristic dystopian mood, dramatic lighting, no text, no frame',
   clay: ', claymation stop-motion style, sculpted clay figures and sets, visible fingerprint textures on surfaces, soft diffused studio lighting, miniature handmade world, warm tactile quality, Aardman and Laika aesthetic, shallow depth of field, no text, no frame',
@@ -567,6 +566,146 @@ async function renderPosterPreview() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// POSTER THEMES
+// ═══════════════════════════════════════════════════════════
+const POSTER_THEMES = {
+  watercolor: {
+    bg: ['#f5f0e6', '#eae0cc'],
+    title: '#3a3128', subtitle: '#8a7868', divider: 'rgba(180,140,90,.3)',
+    textLabel: 'rgba(90,70,50,.4)', textColor: 'rgba(60,50,40,.8)',
+    accent: '#a8824a', watermark: 'rgba(90,70,50,.35)',
+    titleFont: '"Ma Shan Zheng","Cormorant Garamond",serif',
+    decoration: 'watercolor',
+  },
+  dreamcore: {
+    bg: ['#2a1f3d', '#1a0f2e'],
+    title: '#f0e0ff', subtitle: 'rgba(240,220,255,.5)', divider: 'rgba(200,160,255,.3)',
+    textLabel: 'rgba(200,160,255,.3)', textColor: 'rgba(240,220,255,.8)',
+    accent: '#d4a0ff', watermark: 'rgba(240,220,255,.3)',
+    titleFont: '"Cormorant Garamond",serif',
+    decoration: 'dreamcore',
+  },
+  inkwash: {
+    bg: ['#f2ede0', '#e8e0cc'],
+    title: '#1a1a1a', subtitle: '#555', divider: 'rgba(0,0,0,.15)',
+    textLabel: 'rgba(0,0,0,.25)', textColor: 'rgba(0,0,0,.75)',
+    accent: '#c83c3c', watermark: 'rgba(0,0,0,.35)',
+    titleFont: '"Ma Shan Zheng","Cormorant Garamond",serif',
+    decoration: 'inkwash',
+  },
+  pixel: {
+    bg: ['#0a0a14', '#05050a'],
+    title: '#8bf0a0', subtitle: 'rgba(139,240,160,.4)', divider: 'rgba(139,240,160,.2)',
+    textLabel: 'rgba(139,240,160,.3)', textColor: 'rgba(220,230,200,.8)',
+    accent: '#ffbf40', watermark: 'rgba(139,240,160,.35)',
+    titleFont: 'monospace',
+    decoration: 'pixel',
+  },
+  ghibli: {
+    bg: ['#f0e6d0', '#e0cfa8'],
+    title: '#2a3d2a', subtitle: '#6a7858', divider: 'rgba(80,100,60,.3)',
+    textLabel: 'rgba(60,80,40,.4)', textColor: 'rgba(40,60,30,.85)',
+    accent: '#8da650', watermark: 'rgba(60,80,40,.35)',
+    titleFont: '"Ma Shan Zheng","Cormorant Garamond",serif',
+    decoration: 'ghibli',
+  },
+  ukiyoe: {
+    bg: ['#f5ede0', '#ebe0c8'],
+    title: '#1a1a1a', subtitle: '#444', divider: 'rgba(0,0,0,.2)',
+    textLabel: 'rgba(0,0,0,.3)', textColor: 'rgba(0,0,0,.8)',
+    accent: '#c8333a', watermark: 'rgba(0,0,0,.35)',
+    titleFont: '"Ma Shan Zheng","Cormorant Garamond",serif',
+    decoration: 'ukiyoe',
+  },
+  cyberpunk: {
+    bg: ['#0d0520', '#050014'],
+    title: '#ff2be8', subtitle: 'rgba(0,240,255,.7)', divider: 'rgba(255,43,232,.35)',
+    textLabel: 'rgba(0,240,255,.4)', textColor: 'rgba(220,240,255,.85)',
+    accent: '#00f0ff', watermark: 'rgba(255,43,232,.45)',
+    titleFont: 'monospace',
+    decoration: 'cyberpunk',
+  },
+  clay: {
+    bg: ['#f0e2cd', '#e5d4b5'],
+    title: '#4a3520', subtitle: '#8a6a48', divider: 'rgba(120,80,40,.3)',
+    textLabel: 'rgba(90,60,30,.4)', textColor: 'rgba(70,50,25,.85)',
+    accent: '#c8843a', watermark: 'rgba(90,60,30,.35)',
+    titleFont: '"Cormorant Garamond",serif',
+    decoration: 'clay',
+  },
+};
+
+// Draw theme-specific decorations on poster
+function drawDecoration(ctx, theme, W, H, x, y, w, h) {
+  ctx.save();
+  switch(theme.decoration) {
+    case 'inkwash':
+      // Red seal/chop in top-right corner
+      ctx.fillStyle = theme.accent;
+      ctx.fillRect(W - 140, 40, 52, 52);
+      ctx.fillStyle = theme.bg[0];
+      ctx.font = 'bold 22px "Ma Shan Zheng", serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('梦', W - 114, 72);
+      break;
+    case 'cyberpunk':
+      // Horizontal scan lines across whole poster (drawn once for whole canvas)
+      if (x === -1) {
+        ctx.fillStyle = 'rgba(0,240,255,.03)';
+        for (let i = 0; i < H; i += 4) ctx.fillRect(0, i, W, 1);
+        // Corner brackets
+        ctx.strokeStyle = theme.accent;
+        ctx.lineWidth = 2;
+        const bs = 30;
+        [[40,40],[W-40-bs,40],[40,H-40-bs],[W-40-bs,H-40-bs]].forEach((p, idx) => {
+          ctx.beginPath();
+          if (idx === 0) { ctx.moveTo(p[0], p[1]+bs); ctx.lineTo(p[0], p[1]); ctx.lineTo(p[0]+bs, p[1]); }
+          if (idx === 1) { ctx.moveTo(p[0], p[1]); ctx.lineTo(p[0]+bs, p[1]); ctx.lineTo(p[0]+bs, p[1]+bs); }
+          if (idx === 2) { ctx.moveTo(p[0], p[1]); ctx.lineTo(p[0], p[1]+bs); ctx.lineTo(p[0]+bs, p[1]+bs); }
+          if (idx === 3) { ctx.moveTo(p[0], p[1]+bs); ctx.lineTo(p[0]+bs, p[1]+bs); ctx.lineTo(p[0]+bs, p[1]); }
+          ctx.stroke();
+        });
+      }
+      break;
+    case 'pixel':
+      // Pixel grid dots at corners
+      if (x === -1) {
+        ctx.fillStyle = theme.accent;
+        for (let i = 0; i < 6; i++) {
+          ctx.fillRect(30 + i*10, 30, 6, 6);
+          ctx.fillRect(W - 30 - (i+1)*10, 30, 6, 6);
+          ctx.fillRect(30 + i*10, H - 36, 6, 6);
+          ctx.fillRect(W - 30 - (i+1)*10, H - 36, 6, 6);
+        }
+      }
+      break;
+    case 'ukiyoe':
+      // Red corner accents
+      if (x === -1) {
+        ctx.fillStyle = theme.accent;
+        ctx.fillRect(0, 0, W, 4);
+        ctx.fillRect(0, H - 4, W, 4);
+      }
+      break;
+    case 'dreamcore':
+      // Soft glow orbs in corners
+      if (x === -1) {
+        const orb = (cx, cy, r) => {
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+          g.addColorStop(0, 'rgba(212,160,255,.3)');
+          g.addColorStop(1, 'rgba(212,160,255,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+        };
+        orb(80, 80, 180);
+        orb(W - 80, H - 80, 200);
+      }
+      break;
+  }
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════
 // POSTER GENERATION
 // ═══════════════════════════════════════════════════════════
 async function generatePoster() {
@@ -642,38 +781,46 @@ async function generatePoster() {
   });
   totalH += FOOTER_AREA - SCENE_GAP;
 
+  const theme = POSTER_THEMES[selectedStyle] || POSTER_THEMES.watercolor;
+
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = totalH;
   const ctx = canvas.getContext('2d');
 
   // Background
   const bgGrad = ctx.createLinearGradient(0, 0, 0, totalH);
-  bgGrad.addColorStop(0, '#1c1b18');
-  bgGrad.addColorStop(1, '#141310');
+  bgGrad.addColorStop(0, theme.bg[0]);
+  bgGrad.addColorStop(1, theme.bg[1]);
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, totalH);
 
+  // Full-canvas decoration (scanlines, grids, corners, glow orbs)
+  drawDecoration(ctx, theme, W, totalH, -1, 0, 0, 0);
+
   // Watermark at top
-  ctx.fillStyle = 'rgba(232,224,212,.3)';
-  ctx.font = '13px "Cormorant Garamond", serif';
+  ctx.fillStyle = theme.watermark;
+  ctx.font = `13px ${theme.titleFont.includes('monospace') ? 'monospace' : '"Cormorant Garamond", serif'}`;
   ctx.textAlign = 'center';
   ctx.fillText('梦境画卷 · DREAMSCAPE    dreamscape-e5s.pages.dev', W / 2, 32);
 
   // Title
-  ctx.fillStyle = '#e8e0d4';
-  ctx.font = '56px "Ma Shan Zheng", serif';
+  ctx.fillStyle = theme.title;
+  ctx.font = `56px ${theme.titleFont}`;
   ctx.textAlign = 'center';
   ctx.fillText(dreamTitle, W / 2, 100);
 
   // Subtitle
-  ctx.fillStyle = 'rgba(232,224,212,.2)';
-  ctx.font = 'italic 14px "Cormorant Garamond", serif';
+  ctx.fillStyle = theme.subtitle;
+  ctx.font = `italic 14px ${theme.titleFont.includes('monospace') ? 'monospace' : '"Cormorant Garamond", serif'}`;
   ctx.fillText('A DREAM VISUALIZED', W / 2, 132);
 
   // Vertical divider
-  ctx.strokeStyle = 'rgba(232,224,212,.08)';
-  ctx.lineWidth = 0.5;
+  ctx.strokeStyle = theme.divider;
+  ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(W/2, 150); ctx.lineTo(W/2, 168); ctx.stroke();
+
+  // Scene-specific decorations (e.g. red seal for inkwash)
+  drawDecoration(ctx, theme, W, totalH, 0, 0, 0, 0);
 
   // Scenes — single column, image + text below
   let y = TITLE_AREA;
@@ -691,27 +838,20 @@ async function generatePoster() {
       const sw = img.width * scale, sh = img.height * scale;
       ctx.drawImage(img, PAD + (IMG_W - sw)/2, y + (IMG_H - sh)/2, sw, sh);
       ctx.restore();
-
-      // Soft gradient at bottom of image
-      const grad = ctx.createLinearGradient(0, y + IMG_H - 80, 0, y + IMG_H);
-      grad.addColorStop(0, 'rgba(28,27,24,0)');
-      grad.addColorStop(1, 'rgba(28,27,24,0.3)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(PAD, y + IMG_H - 80, IMG_W, 80);
     } else {
-      ctx.fillStyle = 'rgba(232,224,212,.03)';
+      ctx.fillStyle = theme.divider;
       ctx.fillRect(PAD, y, IMG_W, IMG_H);
     }
 
     y += IMG_H + TEXT_GAP;
 
     // Scene number + text
-    ctx.fillStyle = 'rgba(232,224,212,.15)';
+    ctx.fillStyle = theme.textLabel;
     ctx.font = 'italic 12px "Cormorant Garamond", serif';
     ctx.textAlign = 'left';
     ctx.fillText(String(i+1).padStart(2,'0'), PAD, y);
 
-    ctx.fillStyle = 'rgba(232,224,212,.6)';
+    ctx.fillStyle = theme.textColor;
     ctx.font = '20px "EB Garamond", "Noto Serif SC", serif';
     const lines = wrappedScenes[i];
     lines.forEach((line, li) => {
@@ -723,13 +863,13 @@ async function generatePoster() {
 
   // Footer
   const footerY = totalH - FOOTER_AREA + 20;
-  ctx.strokeStyle = 'rgba(232,224,212,.06)';
+  ctx.strokeStyle = theme.divider;
   ctx.lineWidth = 0.5;
   ctx.beginPath(); ctx.moveTo(PAD, footerY); ctx.lineTo(W-PAD, footerY); ctx.stroke();
 
-  const labels = { watercolor:'水彩 Watercolor', dreamcore:'梦核 Dreamcore', inkwash:'水墨 Ink Wash', pixel:'像素 Pixel Art', ghibli:'吉卜力 Ghibli', pencil:'素描 Pencil', ukiyoe:'浮世绘 Ukiyo-e', cyberpunk:'赛博 Cyberpunk', clay:'黏土 Claymation' };
-  ctx.fillStyle = 'rgba(232,224,212,.35)';
-  ctx.font = 'italic 15px "Cormorant Garamond", serif';
+  const labels = { watercolor:'水彩 Watercolor', dreamcore:'梦核 Dreamcore', inkwash:'水墨 Ink Wash', pixel:'像素 Pixel Art', ghibli:'吉卜力 Ghibli', ukiyoe:'浮世绘 Ukiyo-e', cyberpunk:'赛博 Cyberpunk', clay:'黏土 Claymation' };
+  ctx.fillStyle = theme.watermark;
+  ctx.font = `italic 15px ${theme.titleFont.includes('monospace') ? 'monospace' : '"Cormorant Garamond", serif'}`;
   ctx.textAlign = 'center';
   ctx.fillText(labels[selectedStyle] || selectedStyle, W/2, footerY + 45);
 
