@@ -948,7 +948,7 @@ async function generatePoster() {
   ctx.fillStyle = theme.watermark;
   ctx.font = `13px ${theme.titleFont.includes('monospace') ? 'monospace' : '"Cormorant Garamond", serif'}`;
   ctx.textAlign = 'center';
-  ctx.fillText('梦境画卷 · DREAMSCAPE    dreamscape-e5s.pages.dev', W / 2, 32);
+  ctx.fillText('dreamscape-e5s.pages.dev', W / 2, 32);
 
   // Title
   ctx.fillStyle = theme.title;
