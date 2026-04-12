@@ -944,22 +944,17 @@ async function generatePoster() {
   // Full-canvas decoration (scanlines, grids, corners, glow orbs)
   drawDecoration(ctx, theme, W, totalH, -1, 0, 0, 0);
 
-  // Watermark at top
+  // Top watermark: 梦境画卷 + URL
   ctx.fillStyle = theme.watermark;
   ctx.font = `13px ${theme.titleFont.includes('monospace') ? 'monospace' : '"Cormorant Garamond", serif'}`;
   ctx.textAlign = 'center';
-  ctx.fillText('dreamscape-e5s.pages.dev', W / 2, 32);
+  ctx.fillText('梦境画卷 · DREAMSCAPE    dreamscape-e5s.pages.dev', W / 2, 32);
 
-  // Title
+  // Dream title
   ctx.fillStyle = theme.title;
   ctx.font = `56px ${theme.titleFont}`;
   ctx.textAlign = 'center';
   ctx.fillText(dreamTitle, W / 2, 100);
-
-  // Subtitle
-  ctx.fillStyle = theme.subtitle;
-  ctx.font = `italic 14px ${theme.titleFont.includes('monospace') ? 'monospace' : '"Cormorant Garamond", serif'}`;
-  ctx.fillText('A DREAM VISUALIZED', W / 2, 132);
 
   // Vertical divider
   ctx.strokeStyle = theme.divider;
@@ -1016,7 +1011,7 @@ async function generatePoster() {
 
   const labels = { watercolor:'水彩 Watercolor', dreamcore:'梦核 Dreamcore', inkwash:'水墨 Ink Wash', pixel:'像素 Pixel Art', ghibli:'吉卜力 Ghibli', ukiyoe:'浮世绘 Ukiyo-e', cyberpunk:'赛博 Cyberpunk', clay:'黏土 Claymation' };
   ctx.fillStyle = theme.watermark;
-  ctx.font = `italic 15px ${theme.titleFont.includes('monospace') ? 'monospace' : '"Cormorant Garamond", serif'}`;
+  ctx.font = `italic 14px ${theme.titleFont.includes('monospace') ? 'monospace' : '"Cormorant Garamond", serif'}`;
   ctx.textAlign = 'center';
   ctx.fillText(labels[selectedStyle] || selectedStyle, W/2, footerY + 45);
 
