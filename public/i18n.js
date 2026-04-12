@@ -9,7 +9,7 @@ const TEXTS = {
     description: '讲述你的梦，AI 为你绘出每一帧画面',
     styleLabel: '选择画风',
     styles: {
-      watercolor: '水彩', dreamcore: '梦核', inkwash: '水墨',
+      watercolor: '水彩', dreamcore: '梦核',
       pixel: '像素', ghibli: '吉卜力',
       ukiyoe: '浮世绘', cyberpunk: '赛博', clay: '黏土',
     },
@@ -51,7 +51,7 @@ const TEXTS = {
     description: 'Describe your dream — AI paints every scene',
     styleLabel: 'Visual Style',
     styles: {
-      watercolor: 'Watercolor', dreamcore: 'Dreamcore', inkwash: 'Ink Wash',
+      watercolor: 'Watercolor', dreamcore: 'Dreamcore',
       pixel: 'Pixel Art', ghibli: 'Ghibli',
       ukiyoe: 'Ukiyo-e', cyberpunk: 'Cyberpunk', clay: 'Claymation',
     },
