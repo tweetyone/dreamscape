@@ -113,7 +113,7 @@
     <!-- End screen -->
     <div id="cinema-end" style="position:fixed;inset:0;display:none;flex-direction:column;background:rgba(10,10,8,.97);z-index:60;overflow-y:auto;">
       <div style="min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px 20px;">
-        <p id="end-title" style="font-family:'Cormorant Garamond',serif;font-size:clamp(1.4rem,3.5vw,2.2rem);color:#e8e0d4;letter-spacing:.1em;margin-bottom:8px;"></p>
+        <p id="end-title" style="font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,5vw,3rem);color:#e8e0d4;letter-spacing:.12em;margin-bottom:8px;"></p>
         <p id="end-subtitle" style="font-family:'Cormorant Garamond',serif;font-size:clamp(.78rem,1.4vw,1rem);font-weight:300;font-style:italic;color:rgba(232,224,212,.35);letter-spacing:.06em;margin-bottom:20px;">— 梦醒了，画还在 —</p>
         <!-- Poster preview -->
         <div id="poster-preview" style="width:min(90%,420px);margin-bottom:20px;">
@@ -123,6 +123,27 @@
           <button id="btn-interpret" class="end-btn">解梦 · INTERPRET</button>
           <button id="btn-share" class="end-btn">保存海报 · SAVE</button>
           <button id="btn-restart" class="end-btn">再做一个梦 · DREAM AGAIN</button>
+        </div>
+        <button id="btn-tip" style="margin-top:16px;background:none;border:none;color:rgba(232,224,212,.3);font-family:'Cormorant Garamond',serif;font-size:.72rem;cursor:pointer;letter-spacing:.1em;transition:color .3s;"></button>
+        <a id="bug-report" href="https://github.com/tweetyone/dreamscape/issues" target="_blank" style="display:block;margin-top:10px;color:rgba(232,224,212,.2);font-family:'Cormorant Garamond',serif;font-size:.64rem;letter-spacing:.08em;text-decoration:none;transition:color .3s;"></a>
+
+        <!-- Tip modal -->
+        <div id="tip-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;">
+          <div style="max-width:400px;width:100%;padding:32px 24px;background:#1a1a18;border:1px solid rgba(232,224,212,.1);border-radius:20px;text-align:center;position:relative;">
+            <button id="tip-close" style="position:absolute;top:12px;right:16px;background:none;border:none;color:rgba(232,224,212,.4);font-size:1.2rem;cursor:pointer;">&times;</button>
+            <p id="tip-title" style="font-family:'Cormorant Garamond',serif;font-size:1rem;color:rgba(232,224,212,.7);margin-bottom:8px;"></p>
+            <p id="tip-subtitle" style="font-family:'Cormorant Garamond',serif;font-size:.72rem;color:rgba(232,224,212,.3);margin-bottom:20px;font-style:italic;"></p>
+            <div style="display:flex;gap:16px;justify-content:center;">
+              <div style="flex:1;text-align:center;">
+                <img src="wechat-pay.jpg" style="width:100%;max-width:160px;border-radius:10px;" alt="WeChat Pay">
+                <p style="font-family:'Cormorant Garamond',serif;font-size:.68rem;color:rgba(232,224,212,.35);margin-top:8px;">微信 WeChat</p>
+              </div>
+              <div style="flex:1;text-align:center;">
+                <img src="alipay.jpg" style="width:100%;max-width:160px;border-radius:10px;" alt="Alipay">
+                <p style="font-family:'Cormorant Garamond',serif;font-size:.68rem;color:rgba(232,224,212,.35);margin-top:8px;">支付宝 Alipay</p>
+              </div>
+            </div>
+          </div>
         </div>
       <!-- Dream interpretation panel -->
       <div id="interpret-panel" style="display:none;max-width:560px;width:90%;margin-top:8px;padding:28px 32px;background:rgba(232,224,212,.05);border:1px solid rgba(232,224,212,.08);border-radius:16px;backdrop-filter:blur(8px);">

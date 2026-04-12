@@ -1406,6 +1406,11 @@ $('debug-reset').addEventListener('click', () => {
 });
 
 // Test interpret from home page
+// Tip modal
+$('btn-tip').addEventListener('click', () => { $('tip-modal').style.display = 'flex'; });
+$('tip-close').addEventListener('click', () => { $('tip-modal').style.display = 'none'; });
+$('tip-modal').addEventListener('click', (e) => { if (e.target === $('tip-modal')) $('tip-modal').style.display = 'none'; });
+
 // Loading back button
 $('loading-back-btn').addEventListener('click', () => { showPhase('input-phase'); });
 

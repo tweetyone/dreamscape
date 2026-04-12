@@ -33,6 +33,10 @@ const TEXTS = {
     shareBtn: '保存海报',
     sharingBtn: '生成中…',
     restartBtn: '再做一个梦',
+    bugReport: '遇到 bug？去 GitHub 提交反馈',
+    tipBtn: '🧋 作者的 token 快见底了，请作者喝杯奶茶续命',
+    tipTitle: '🧋 作者为爱发电中',
+    tipSubtitle: '一杯奶茶 = 好多个梦',
     quotaError: '梦境暂时拥挤 🌙\n请等一分钟再试，或稍后再来',
     interpretLoading: '正在解读梦境…',
     interpretFail: '解梦失败，请稍后再试。',
@@ -75,6 +79,10 @@ const TEXTS = {
     shareBtn: 'Save Poster',
     sharingBtn: 'Generating…',
     restartBtn: 'Dream Again',
+    bugReport: 'Found a bug? Submit feedback on GitHub',
+    tipBtn: '🧋 The author\'s tokens are running low — buy a boba tea to keep the dreams alive',
+    tipTitle: '🧋 Powered by love (and tokens)',
+    tipSubtitle: 'One boba tea = many more dreams',
     quotaError: 'The dreams are crowded right now 🌙\nWait a minute and try again',
     interpretLoading: 'Interpreting your dream…',
     interpretFail: 'Interpretation failed. Please try again.',
@@ -135,6 +143,14 @@ function applyLanguage() {
   if (btnShare) btnShare.textContent = tx.shareBtn;
   const btnRestart = document.getElementById('btn-restart');
   if (btnRestart) btnRestart.textContent = tx.restartBtn;
+  const btnTip = document.getElementById('btn-tip');
+  if (btnTip) btnTip.textContent = tx.tipBtn;
+  const tipTitle = document.getElementById('tip-title');
+  if (tipTitle) tipTitle.textContent = tx.tipTitle;
+  const tipSub = document.getElementById('tip-subtitle');
+  if (tipSub) tipSub.textContent = tx.tipSubtitle;
+  const bugReport = document.getElementById('bug-report');
+  if (bugReport) bugReport.textContent = tx.bugReport;
 }
 
 function switchLang() {
