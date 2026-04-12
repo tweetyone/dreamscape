@@ -116,21 +116,25 @@ function applyLanguage() {
     if (tx.styles[key]) btn.textContent = tx.styles[key];
   });
   document.getElementById('begin-btn').textContent = tx.beginBtn;
-  document.getElementById('test-btn').textContent = tx.testBtn;
   document.querySelector('.footer-note').textContent = tx.footer;
 
   // Loading phase
   document.getElementById('loading-back-btn').textContent = tx.loadingBack;
 
-  // Cinematic phase
-  document.querySelector('#cinema-title p').textContent = tx.visualized;
-  document.getElementById('end-subtitle').textContent = tx.endLine;
-  document.getElementById('btn-interpret').textContent = tx.interpretBtn;
-  document.getElementById('btn-share').textContent = tx.shareBtn;
-  document.getElementById('btn-restart').textContent = tx.restartBtn;
-
-  // Language switch button
+  // Language switch button (do this first so it always updates)
   document.getElementById('lang-switch').textContent = tx.langSwitch;
+
+  // Cinematic phase (these elements may not exist yet, so use optional chaining)
+  const cinTitle = document.querySelector('#cinema-title p');
+  if (cinTitle) cinTitle.textContent = tx.visualized;
+  const endSub = document.getElementById('end-subtitle');
+  if (endSub) endSub.textContent = tx.endLine;
+  const btnInt = document.getElementById('btn-interpret');
+  if (btnInt) btnInt.textContent = tx.interpretBtn;
+  const btnShare = document.getElementById('btn-share');
+  if (btnShare) btnShare.textContent = tx.shareBtn;
+  const btnRestart = document.getElementById('btn-restart');
+  if (btnRestart) btnRestart.textContent = tx.restartBtn;
 }
 
 function switchLang() {

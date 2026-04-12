@@ -1134,28 +1134,6 @@ beginBtn.addEventListener('click', async () => {
   lazyLoadImage(1);
 });
 
-// Test mode
-$('test-btn').addEventListener('click', async () => {
-  showPhase('loading-phase');
-  const lm = t().loadingMessages;
-  setLoadingProgress(lm[0][0], '', 5);
-
-  const fallbackInput = currentLang === 'zh' ? '我梦见自己在一片森林里走着' : 'I dreamt I was walking through a forest';
-  const script = localFallback(dreamInput.value.trim() || fallbackInput);
-  dreamTitle = script.title;
-  scenes = script.scenes.map(s => ({ ...s, dataUrl: null, imgLoading: true }));
-
-  for (let i = 0; i < scenes.length; i++) {
-    const msg = lm[(i + 2) % lm.length];
-    setLoadingProgress(msg[0], '', 15 + Math.round((i / scenes.length) * 80));
-    await new Promise(r => setTimeout(r, 300));
-    scenes[i].dataUrl = generatePlaceholderImage(i);
-    scenes[i].imgLoading = false;
-    if (i === 0) startCinematic();
-    if (currentScene >= 0 && currentScene === i) showSceneImage(i);
-  }
-});
-
 // Playback controls
 $('ctrl-play').addEventListener('click', () => {
   isPlaying = !isPlaying;
@@ -1290,36 +1268,6 @@ $('debug-reset').addEventListener('click', () => {
 });
 
 // Test interpret from home page
-$('test-interpret-btn').addEventListener('click', async () => {
-  const text = dreamInput.value.trim();
-  if (!text) { dreamInput.focus(); return; }
-
-  const modal = $('test-interpret-modal');
-  const result = $('test-interpret-result');
-  modal.style.display = 'flex';
-  result.textContent = t().interpretLoading;
-
-  try {
-    const resp = await fetch('/api/story', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: buildInterpretPrompt(text) }] }],
-        generationConfig: { temperature: 0.8, maxOutputTokens: 2000 },
-      }),
-    });
-    const data = await resp.json();
-    const parts = data.candidates?.[0]?.content?.parts || [];
-    result.textContent = parts.map(p => p.text || '').join('').trim();
-  } catch (e) {
-    result.textContent = t().interpretFail;
-  }
-});
-
-$('test-interpret-close').addEventListener('click', () => {
-  $('test-interpret-modal').style.display = 'none';
-});
-
 // Loading back button
 $('loading-back-btn').addEventListener('click', () => { showPhase('input-phase'); });
 

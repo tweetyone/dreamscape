@@ -312,21 +312,20 @@ html[lang="zh"] #end-title {
   /* Input phase */
   #input-phase { padding:20px 16px; }
   #input-phase .container { max-width:100%; }
-  #input-phase h1 { font-size:clamp(1.8rem,7vw,2.4rem); letter-spacing:.06em; }
-  #input-phase .subtitle { font-size:.64rem; letter-spacing:.25em; }
-  .dream-icon { width:24px; height:24px; margin:0 auto 10px; }
-  .title-line { height:12px; margin:5px auto; }
-  #input-phase .description { font-size:.78rem; margin:0 0 10px; line-height:1.8; }
-  #input-phase .description small { font-size:.68rem; }
-  .style-label { font-size:.58rem; margin-bottom:5px; }
-  .style-selector { gap:5px; margin-bottom:10px; }
-  .style-btn { padding:6px 11px; font-size:.64rem; border-radius:16px; }
-  #dream-input { padding:14px 16px; font-size:.85rem; line-height:1.8; border-radius:10px; }
-  .btn-row { margin-top:12px !important; gap:8px !important; flex-wrap:wrap; }
-  #begin-btn { padding:11px 32px; font-size:.76rem; letter-spacing:.12em; border-radius:22px; }
-  #test-btn, #test-interpret-btn { padding:8px 14px !important; font-size:.64rem !important; }
-  .footer-note { margin-top:8px; font-size:.56rem; }
-  #lang-switch { top:12px; right:12px; padding:4px 10px; font-size:.62rem; }
+  #input-phase h1 { font-size:clamp(2rem,8vw,2.8rem); letter-spacing:.08em; }
+  #input-phase .subtitle { font-size:.72rem; letter-spacing:.25em; }
+  .dream-icon { width:28px; height:28px; margin:0 auto 14px; }
+  .title-line { height:16px; margin:8px auto; }
+  #input-phase .description { font-size:.88rem; margin:0 0 18px; line-height:2; }
+  #input-phase .description small { font-size:.76rem; }
+  .style-label { font-size:.66rem; margin-bottom:8px; }
+  .style-selector { gap:6px; margin-bottom:16px; }
+  .style-btn { padding:7px 13px; font-size:.72rem; border-radius:16px; }
+  #dream-input { padding:16px 18px; font-size:.92rem; line-height:1.8; border-radius:10px; }
+  .btn-row { margin-top:14px !important; gap:8px !important; flex-wrap:wrap; }
+  #begin-btn { padding:12px 36px; font-size:.82rem; letter-spacing:.12em; border-radius:22px; }
+  .footer-note { margin-top:10px; font-size:.62rem; }
+  #lang-switch { top:12px; right:12px; padding:5px 12px; font-size:.68rem; }
 
   /* Loading phase */
   #loading-back-btn { top:12px; left:12px; font-size:.62rem; padding:4px 10px; }
