@@ -1196,8 +1196,26 @@ async function generatePosterDataUrl() {
   return await generatePoster();
 }
 
-function downloadPoster() {
+async function downloadPoster() {
   if (!posterDataUrl) return;
+
+  // Try Web Share API first (mobile — lets user save to Photos)
+  if (navigator.share && navigator.canShare) {
+    try {
+      const resp = await fetch(posterDataUrl);
+      const blob = await resp.blob();
+      const file = new File([blob], 'dreamscape-' + Date.now() + '.jpg', { type: 'image/jpeg' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+        return;
+      }
+    } catch (e) {
+      if (e.name === 'AbortError') return; // user cancelled share
+      // Fall through to download
+    }
+  }
+
+  // Fallback: regular download
   const link = document.createElement('a');
   link.download = 'dreamscape-' + Date.now() + '.jpg';
   link.href = posterDataUrl;
