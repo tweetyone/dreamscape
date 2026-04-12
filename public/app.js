@@ -8,7 +8,7 @@ const STYLE_SUFFIXES = {
   dreamcore: ', dreamcore aesthetic, surreal floating objects, impossible architecture, soft neon glow, liminal space, pastel fog, ethereal lighting, otherworldly atmosphere, no text, no frame',
   inkwash: ', traditional Chinese ink wash painting, sumi-e style, monochrome black ink on rice paper, flowing brushstrokes, minimalist composition, misty atmosphere, zen aesthetic, no text, no frame',
   pixel: ', pixel art style, 16-bit retro game aesthetic, dreamy color palette, soft pixels, nostalgic atmosphere, detailed pixel scenery, dithering, no text, no frame',
-  ghibli: ', Studio Ghibli anime style, warm hand-painted background art, lush green landscapes, soft cel shading, Hayao Miyazaki aesthetic, golden afternoon light, detailed clouds and foliage, gentle and nostalgic atmosphere, animated film still, no text, no frame',
+  ghibli: ', Studio Ghibli anime style, warm hand-painted background art, soft cel shading, Hayao Miyazaki aesthetic, gentle and nostalgic atmosphere, animated film still, rich colors, no text, no frame',
   ukiyoe: ', traditional Japanese ukiyo-e woodblock print style, bold flat color areas, strong black outlines, wave patterns, Hokusai and Hiroshige influence, dramatic composition, stylized clouds and water, decorative natural elements, Edo period aesthetic, no text, no frame',
   cyberpunk: ', cyberpunk neon cityscape, rain-soaked streets reflecting neon signs, deep blue and magenta and electric cyan color palette, volumetric fog, holographic elements, Blade Runner atmosphere, futuristic dystopian mood, dramatic lighting, no text, no frame',
   clay: ', claymation stop-motion style, sculpted clay figures and sets, visible fingerprint textures on surfaces, soft diffused studio lighting, miniature handmade world, warm tactile quality, Aardman and Laika aesthetic, shallow depth of field, no text, no frame',
@@ -89,18 +89,65 @@ function showQuotaError() {
   $('loading-step').textContent = line1;
   $('loading-detail').textContent = line2 || '';
   $('loading-pct').textContent = '';
-  // Dim the ring
-  $('loading-ring').style.strokeDashoffset = 365;
+  $('loading-ring').style.strokeDashoffset = 302;
   $('loading-ring').style.stroke = 'rgba(200,80,80,.4)';
+  stopFakeProgress();
+}
+
+// Smooth progress animation
+let currentPct = 0;
+let targetPct = 0;
+let fakeProgressTimer = null;
+let progressAnimFrame = null;
+
+function startFakeProgress() {
+  // Slowly tick up to give user sense of movement
+  stopFakeProgress();
+  fakeProgressTimer = setInterval(() => {
+    if (currentPct < targetPct - 2) return; // real progress is ahead, don't fake
+    if (targetPct < 95) {
+      targetPct += 0.3;
+      renderProgress(targetPct);
+    }
+  }, 300);
+}
+
+function stopFakeProgress() {
+  clearInterval(fakeProgressTimer);
+  fakeProgressTimer = null;
+}
+
+function renderProgress(pct) {
+  const clamped = Math.min(100, Math.max(0, pct));
+  currentPct = clamped;
+  const offset = 302 - (302 * clamped / 100);
+  $('loading-ring').style.strokeDashoffset = offset;
+  $('loading-pct').textContent = Math.round(clamped) + '%';
 }
 
 function setLoadingProgress(step, detail, pct) {
   $('loading-step').textContent = step;
   $('loading-detail').textContent = detail;
   if (pct !== undefined) {
-    const offset = 365 - (365 * pct / 100);
-    $('loading-ring').style.strokeDashoffset = offset;
-    $('loading-pct').textContent = Math.round(pct) + '%';
+    targetPct = pct;
+    if (pct > currentPct) {
+      // Animate smoothly from current to target
+      const start = currentPct;
+      const diff = pct - start;
+      const duration = 800;
+      const startTime = performance.now();
+      cancelAnimationFrame(progressAnimFrame);
+      function tick(now) {
+        const elapsed = now - startTime;
+        const t = Math.min(1, elapsed / duration);
+        const eased = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+        renderProgress(start + diff * eased);
+        if (t < 1) progressAnimFrame = requestAnimationFrame(tick);
+      }
+      progressAnimFrame = requestAnimationFrame(tick);
+    } else {
+      renderProgress(pct);
+    }
   }
 }
 
@@ -108,11 +155,14 @@ function setLoadingProgress(step, detail, pct) {
 // API: IMAGE GENERATION
 // ═══════════════════════════════════════════════════════════
 // Toggle: 'imagen' or 'replicate'
-const IMAGE_PROVIDER = 'replicate';
+const IMAGE_PROVIDER = 'imagen';
 
 function buildImagePrompt(prompt) {
   const suffix = STYLE_SUFFIXES[selectedStyle] || STYLE_SUFFIXES.watercolor;
-  return (visualThread ? visualThread + '. ' : '') + prompt + suffix;
+  // Scene-specific prompt first (most important), then style, then visual thread last (atmosphere)
+  const fullPrompt = prompt + suffix + (visualThread ? '. Overall atmosphere: ' + visualThread : '');
+  console.log('[Image prompt]', fullPrompt);
+  return fullPrompt;
 }
 
 // Imagen 4.0 (Google)
@@ -144,7 +194,7 @@ async function generateImageImagen(fullPrompt, retries = 2) {
 }
 
 // Replicate Flux Schnell
-async function generateImageReplicate(fullPrompt, retries = 2) {
+async function generateImageReplicate(fullPrompt, retries = 3) {
   const aspectRatio = window.innerWidth > window.innerHeight ? '16:9' : '9:16';
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -154,14 +204,14 @@ async function generateImageReplicate(fullPrompt, retries = 2) {
         body: JSON.stringify({ prompt: fullPrompt, aspect_ratio: aspectRatio }),
       });
       if (resp.status === 429) {
-        await new Promise(r => setTimeout(r, (attempt + 1) * 5000));
+        const wait = (attempt + 1) * 10000; // 10s, 20s, 30s, 40s
+        console.warn(`Replicate 429, waiting ${wait/1000}s...`);
+        await new Promise(r => setTimeout(r, wait));
         continue;
       }
       if (!resp.ok) throw new Error('Replicate API error: ' + resp.status);
       const data = await resp.json();
-      // Replicate returns an image URL
-      if (data.url) return data.url;
-      if (data.output?.[0]) return data.output[0];
+      if (data.dataUrl) return data.dataUrl;
       throw new Error('No image in response');
     } catch (e) {
       if (attempt === retries) throw e;
@@ -177,7 +227,6 @@ async function generateImage(prompt, retries = 2) {
   }
   return generateImageImagen(fullPrompt, retries);
 }
-}
 
 // ═══════════════════════════════════════════════════════════
 // API: STORY GENERATION (Gemini)
@@ -191,7 +240,7 @@ async function generateStory(dreamText) {
   "scenes": [
     {
       "lines": ["first-person sentence 1", "sentence 2", "sentence 3"],
-      "image_prompt": "ENGLISH: ONLY describe what is unique to THIS scene — the specific subject, action, objects, composition. Do NOT describe atmosphere, lighting, or color (those come from visual_thread). Example: 'a woman with long black hair sitting on a stone bench, holding a cup, looking down'."
+      "image_prompt": "MUST BE IN ENGLISH EVEN IF LINES ARE CHINESE. Describe the specific subject, action, objects, setting, and composition of THIS scene. Example: 'an empty school hallway with lockers, a massive T-Rex visible at the far end, fluorescent lights flickering'."
     }
   ]
 }
@@ -229,10 +278,10 @@ GOOD: "I could hear dishes clinking inside. It reminded me of something."
 
 CRITICAL: Match user's input language EXACTLY. Chinese dream → ALL Chinese. English dream → ALL English. Never mix. Never translate.
 
-═══ IMAGE PROMPTS ═══
+═══ IMAGE PROMPTS (CRITICAL) ═══
 
-visual_thread = atmosphere (used for ALL scenes). Must be concise and specific.
-image_prompt = only the unique subject/composition of this particular scene. No atmosphere words.
+- visual_thread: ENGLISH. Atmosphere only — color palette, lighting, recurring motif.
+- image_prompt: MUST ALWAYS BE IN ENGLISH, even when the user writes in Chinese. This is sent to an image generator that ONLY understands English. Describe specific objects, characters, settings, and actions. Be concrete and visual.
 
 ONLY output valid JSON. No markdown, no explanation.`;
 
@@ -442,23 +491,46 @@ function coverBrushCanvas() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// LAZY IMAGE LOADING
+// LAZY IMAGE LOADING (sequential queue to avoid 429)
 // ═══════════════════════════════════════════════════════════
+let imageQueue = [];
+let imageQueueRunning = false;
+
 function lazyLoadImage(index) {
   if (index < 0 || index >= scenes.length) return;
   if (scenes[index].dataUrl || scenes[index].imgLoading || imageLoadPromises[index]) return;
 
   scenes[index].imgLoading = true;
-  imageLoadPromises[index] = generateImage(scenes[index].image_prompt)
-    .then(dataUrl => {
+  imageLoadPromises[index] = true; // mark as queued
+
+  // Add to queue, prioritize current scene
+  if (index === currentScene) {
+    imageQueue.unshift(index); // current scene goes first
+  } else {
+    imageQueue.push(index);
+  }
+  processImageQueue();
+}
+
+async function processImageQueue() {
+  if (imageQueueRunning || imageQueue.length === 0) return;
+  imageQueueRunning = true;
+
+  while (imageQueue.length > 0) {
+    const index = imageQueue.shift();
+    if (scenes[index].dataUrl) continue; // already loaded
+
+    try {
+      const dataUrl = await generateImage(scenes[index].image_prompt);
       scenes[index].dataUrl = dataUrl;
       scenes[index].imgLoading = false;
       if (currentScene === index) showSceneImage(index);
-    })
-    .catch(err => {
+    } catch (err) {
       console.warn('Image ' + index + ' failed:', err.message);
       scenes[index].imgLoading = false;
-    });
+    }
+  }
+  imageQueueRunning = false;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -794,8 +866,10 @@ async function generatePoster() {
   const W = 1080;
   const PAD = 80;
   const IMG_W = W - PAD * 2;
-  const isPortrait = window.innerWidth < window.innerHeight;
-  const IMG_H = isPortrait ? 560 : 380;
+  // Detect image aspect ratio from first available image
+  const firstImg = sceneImages.find(img => img);
+  const imgIsPortrait = firstImg ? firstImg.height > firstImg.width : window.innerWidth < window.innerHeight;
+  const IMG_H = imgIsPortrait ? Math.round(IMG_W * 16 / 9) : Math.round(IMG_W * 9 / 16);
   const TEXT_GAP = 28;
   const LINE_H = 30;
   const SCENE_GAP = 56;
@@ -1022,8 +1096,11 @@ beginBtn.addEventListener('click', async () => {
   if (!dreamText) return;
 
   showPhase('loading-phase');
+  currentPct = 0; targetPct = 0;
+  $('loading-ring').style.stroke = 'rgba(160,130,80,.6)';
   const lm = t().loadingMessages;
   setLoadingProgress(lm[0][0], '', 5);
+  startFakeProgress();
 
   let script;
   try {
@@ -1039,10 +1116,10 @@ beginBtn.addEventListener('click', async () => {
 
   dreamTitle = script.title;
   visualThread = script.visual_thread || '';
-  setLoadingProgress(lm[1][0], '', 15);
+  setLoadingProgress(lm[1][0], '', 30);
   scenes = script.scenes.map(s => ({ ...s, dataUrl: null, imgLoading: false }));
 
-  setLoadingProgress(lm[2][0], '', 50);
+  setLoadingProgress(lm[2][0], '', 55);
   try {
     scenes[0].imgLoading = true;
     scenes[0].dataUrl = await generateImage(scenes[0].image_prompt);
@@ -1056,6 +1133,8 @@ beginBtn.addEventListener('click', async () => {
     }
   }
 
+  setLoadingProgress(lm[3][0], '', 90);
+  stopFakeProgress();
   startCinematic();
   lazyLoadImage(1);
 });

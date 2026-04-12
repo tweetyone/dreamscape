@@ -68,27 +68,16 @@
     <div class="loading-particles" id="loading-particles"></div>
     <button id="loading-back-btn" style="position:absolute;top:24px;left:24px;z-index:10;background:none;border:1px solid rgba(140,130,110,.15);border-radius:20px;padding:6px 16px;color:#888;font-family:'Cormorant Garamond',serif;font-size:.72rem;letter-spacing:.08em;cursor:pointer;transition:all .4s;backdrop-filter:blur(4px);">← 返回 Back</button>
     <div style="text-align:center;position:relative;z-index:2;">
-      <!-- Animated moon/orbit -->
-      <div class="loading-orbit" style="position:relative;width:140px;height:140px;margin:0 auto 36px;">
-        <svg viewBox="0 0 140 140" style="width:100%;height:100%;">
-          <!-- Outer orbit ring -->
-          <circle cx="70" cy="70" r="58" fill="none" stroke="rgba(180,150,100,.15)" stroke-width="0.8" stroke-dasharray="2 4"/>
-          <!-- Progress arc -->
-          <circle id="loading-ring" cx="70" cy="70" r="58" fill="none"
-            stroke="rgba(180,150,100,.7)" stroke-width="2.2"
-            stroke-dasharray="365" stroke-dashoffset="365"
-            stroke-linecap="round" transform="rotate(-90 70 70)"/>
-          <!-- Inner moon -->
-          <circle cx="70" cy="70" r="22" fill="rgba(180,150,100,.08)" class="loading-moon-bg"/>
-          <circle cx="70" cy="70" r="18" fill="rgba(180,150,100,.18)"/>
-          <!-- Crescent highlight -->
-          <circle cx="78" cy="66" r="14" fill="#edeae4" class="loading-moon-crescent"/>
-          <!-- Orbiting dots -->
-          <circle class="orbit-dot orbit-dot-1" cx="70" cy="12" r="3" fill="rgba(200,160,100,.8)"/>
-          <circle class="orbit-dot orbit-dot-2" cx="70" cy="12" r="2" fill="rgba(180,150,100,.6)"/>
-          <circle class="orbit-dot orbit-dot-3" cx="70" cy="12" r="2.5" fill="rgba(220,180,120,.5)"/>
+      <div style="position:relative;width:110px;height:110px;margin:0 auto 28px;animation:float 4s ease-in-out infinite;">
+        <svg viewBox="0 0 110 110" style="width:100%;height:100%;">
+          <circle cx="55" cy="55" r="48" fill="none" stroke="rgba(160,140,100,.15)" stroke-width="1"/>
+          <circle id="loading-ring" cx="55" cy="55" r="48" fill="none"
+            stroke="rgba(160,130,80,.6)" stroke-width="2"
+            stroke-dasharray="302" stroke-dashoffset="302"
+            stroke-linecap="round" transform="rotate(-90 55 55)"/>
+          <circle cx="55" cy="55" r="6" fill="rgba(160,140,100,.08)" style="animation:pulse 3s ease-in-out infinite;"/>
         </svg>
-        <div id="loading-pct" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:.9rem;color:rgba(120,100,60,.7);letter-spacing:.05em;font-weight:500;"></div>
+        <div id="loading-pct" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:.85rem;color:rgba(120,100,60,.65);letter-spacing:.05em;"></div>
       </div>
       <p id="loading-step" style="font-family:'Cormorant Garamond',serif;font-size:1.15rem;color:#5a4838;letter-spacing:.12em;">坠入梦境…</p>
       <p id="loading-detail" style="font-family:'Cormorant Garamond',serif;font-size:.75rem;color:#9a8a78;font-style:italic;letter-spacing:.15em;margin-top:12px;">falling into the dream…</p>
