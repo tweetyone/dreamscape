@@ -5,12 +5,12 @@
 
 const STYLE_SUFFIXES = {
   watercolor: ', watercolor painting on white paper, soft translucent washes, delicate brushstrokes, minimal elegant composition, muted palette, dreamy atmosphere, fine art illustration, no text, no frame',
-  dreamcore: ', dreamcore aesthetic, surreal floating objects, impossible architecture, soft neon glow, liminal space, pastel fog, ethereal lighting, otherworldly atmosphere, no text, no frame',
+  dreamcore: ', dreamcore aesthetic, soft neon glow, liminal space, pastel fog, ethereal lighting, otherworldly atmosphere, surreal and dreamlike, no text, no frame',
   inkwash: ', traditional Chinese ink wash painting, sumi-e style, monochrome black ink on rice paper, flowing brushstrokes, minimalist composition, misty atmosphere, zen aesthetic, no text, no frame',
   pixel: ', pixel art style, 16-bit retro game aesthetic, dreamy color palette, soft pixels, nostalgic atmosphere, detailed pixel scenery, dithering, no text, no frame',
-  ghibli: ', Studio Ghibli anime style, warm hand-painted background art, lush green landscapes, soft cel shading, Hayao Miyazaki aesthetic, golden afternoon light, detailed clouds and foliage, gentle and nostalgic atmosphere, animated film still, no text, no frame',
+  ghibli: ', Studio Ghibli anime style, warm hand-painted background art, soft cel shading, Hayao Miyazaki aesthetic, warm natural lighting, gentle and nostalgic atmosphere, animated film still, no text, no frame',
   ukiyoe: ', traditional Japanese ukiyo-e woodblock print style, bold flat color areas, strong black outlines, dramatic composition, decorative natural elements, Edo period aesthetic, woodblock print texture, muted earth tones, no text, no frame',
-  cyberpunk: ', cyberpunk neon cityscape, rain-soaked streets reflecting neon signs, deep blue and magenta and electric cyan color palette, volumetric fog, holographic elements, Blade Runner atmosphere, futuristic dystopian mood, dramatic lighting, no text, no frame',
+  cyberpunk: ', cyberpunk art style, deep blue and magenta and electric cyan color palette, neon glow lighting, volumetric fog, holographic accents, futuristic dystopian mood, dramatic cinematic lighting, no text, no frame',
   clay: ', claymation stop-motion style, sculpted clay figures and sets, visible fingerprint textures on surfaces, soft diffused studio lighting, miniature handmade world, warm tactile quality, Aardman and Laika aesthetic, shallow depth of field, no text, no frame',
 };
 
