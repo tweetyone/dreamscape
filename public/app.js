@@ -1,6 +1,10 @@
 // ═══════════════════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════════════════
+// Debug mode: add ?debug=1 to URL to enable logging
+const DEBUG = new URLSearchParams(window.location.search).has('debug');
+const log = (...args) => { if (DEBUG) console.log(...args); };
+const warn = (...args) => { if (DEBUG) console.warn(...args); };
 // API key is stored server-side in Vercel environment variables
 
 const STYLE_SUFFIXES = {
@@ -162,7 +166,7 @@ function buildImagePrompt(prompt) {
   const suffix = STYLE_SUFFIXES[selectedStyle] || STYLE_SUFFIXES.watercolor;
   // Scene-specific prompt first (most important), then style, then visual thread last (atmosphere)
   const fullPrompt = prompt + suffix + (visualThread ? '. Overall atmosphere: ' + visualThread : '');
-  console.log('[Image prompt]', fullPrompt);
+  log('[Image prompt]', fullPrompt);
   return fullPrompt;
 }
 
@@ -188,10 +192,10 @@ async function generateImageImagen(fullPrompt, retries = 2) {
         throw new Error('Imagen API error: ' + resp.status);
       }
       const data = await resp.json();
-      console.log('Imagen response keys:', Object.keys(data));
+      log('Imagen response keys:', Object.keys(data));
       const b64 = data.predictions?.[0]?.bytesBase64Encoded;
       if (!b64) {
-        console.warn('No image in response. Full response:', JSON.stringify(data).slice(0, 200));
+        console.warn('No image in response');
         throw new Error('No image in response');
       }
       return 'data:image/png;base64,' + b64;
