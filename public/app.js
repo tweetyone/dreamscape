@@ -541,7 +541,6 @@ async function processImageQueue() {
         scenes[index].imgFailed = true;
         if (currentScene === index) showImageError(err.message);
       }
-      }
     }
   } finally {
     imageQueueRunning = false;
