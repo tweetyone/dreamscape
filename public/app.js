@@ -693,7 +693,7 @@ function showEndScreen() {
   clearTimeout(lineTimer);
   clearTimeout(sceneTimer);
   currentScene = scenes.length;
-  $('end-title').textContent = dreamTitle;
+  $('end-title').textContent = currentLang === 'zh' ? '梦境画卷' : 'Dreamscape';
   $('cinema-end').style.display = 'flex';
   $('progress-bar-fill').style.width = '100%';
   // Auto-render poster preview
