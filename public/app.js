@@ -290,7 +290,7 @@ CRITICAL: Match user's input language EXACTLY. Chinese dream → ALL Chinese. En
 ═══ IMAGE PROMPTS (CRITICAL) ═══
 
 - visual_thread: ENGLISH. Atmosphere only — color palette, lighting, recurring motif.
-- image_prompt: MUST ALWAYS BE IN ENGLISH, even when the user writes in Chinese. This is sent to an image generator that ONLY understands English. Describe specific objects, characters, settings, and actions. Be concrete and visual.
+- image_prompt: MUST ALWAYS BE IN ENGLISH, even when the user writes in Chinese. This is sent to an image generator with content filters. Describe the scene visually — setting, characters, composition, lighting. Avoid words like: flesh, blood, gore, nude, naked, wound, eating body parts. Instead use softer alternatives: 'translucent form', 'soft glowing material', 'ethereal figure'. Focus on mood and spatial composition rather than graphic physical details.
 
 ONLY output valid JSON. No markdown, no explanation.`;
 
