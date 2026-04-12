@@ -9,7 +9,7 @@ const STYLE_SUFFIXES = {
   inkwash: ', traditional Chinese ink wash painting, sumi-e style, monochrome black ink on rice paper, flowing brushstrokes, minimalist composition, misty atmosphere, zen aesthetic, no text, no frame',
   pixel: ', pixel art style, 16-bit retro game aesthetic, dreamy color palette, soft pixels, nostalgic atmosphere, detailed pixel scenery, dithering, no text, no frame',
   ghibli: ', Studio Ghibli anime style, warm hand-painted background art, lush green landscapes, soft cel shading, Hayao Miyazaki aesthetic, golden afternoon light, detailed clouds and foliage, gentle and nostalgic atmosphere, animated film still, no text, no frame',
-  ukiyoe: ', traditional Japanese ukiyo-e woodblock print style, bold flat color areas, strong black outlines, wave patterns, Hokusai and Hiroshige influence, dramatic composition, stylized clouds and water, decorative natural elements, Edo period aesthetic, no text, no frame',
+  ukiyoe: ', traditional Japanese ukiyo-e woodblock print style, bold flat color areas, strong black outlines, dramatic composition, decorative natural elements, Edo period aesthetic, woodblock print texture, muted earth tones, no text, no frame',
   cyberpunk: ', cyberpunk neon cityscape, rain-soaked streets reflecting neon signs, deep blue and magenta and electric cyan color palette, volumetric fog, holographic elements, Blade Runner atmosphere, futuristic dystopian mood, dramatic lighting, no text, no frame',
   clay: ', claymation stop-motion style, sculpted clay figures and sets, visible fingerprint textures on surfaces, soft diffused studio lighting, miniature handmade world, warm tactile quality, Aardman and Laika aesthetic, shallow depth of field, no text, no frame',
 };
@@ -129,6 +129,7 @@ function setLoadingProgress(step, detail, pct) {
   $('loading-step').textContent = step;
   $('loading-detail').textContent = detail;
   if (pct !== undefined) {
+    if (pct <= currentPct) return; // never go backwards
     targetPct = pct;
     if (pct > currentPct) {
       // Animate smoothly from current to target
@@ -181,10 +182,18 @@ async function generateImageImagen(fullPrompt, retries = 2) {
         await new Promise(r => setTimeout(r, (attempt + 1) * 5000));
         continue;
       }
-      if (!resp.ok) throw new Error('Imagen API error: ' + resp.status);
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.error('Imagen error:', resp.status, errText);
+        throw new Error('Imagen API error: ' + resp.status);
+      }
       const data = await resp.json();
+      console.log('Imagen response keys:', Object.keys(data));
       const b64 = data.predictions?.[0]?.bytesBase64Encoded;
-      if (!b64) throw new Error('No image in response');
+      if (!b64) {
+        console.warn('No image in response. Full response:', JSON.stringify(data).slice(0, 200));
+        throw new Error('No image in response');
+      }
       return 'data:image/png;base64,' + b64;
     } catch (e) {
       if (attempt === retries) throw e;
@@ -516,26 +525,50 @@ async function processImageQueue() {
   if (imageQueueRunning || imageQueue.length === 0) return;
   imageQueueRunning = true;
 
-  while (imageQueue.length > 0) {
-    const index = imageQueue.shift();
-    if (scenes[index].dataUrl) continue; // already loaded
+  try {
+    while (imageQueue.length > 0) {
+      const index = imageQueue.shift();
+      if (!scenes[index] || scenes[index].dataUrl) continue;
 
-    try {
-      const dataUrl = await generateImage(scenes[index].image_prompt);
-      scenes[index].dataUrl = dataUrl;
-      scenes[index].imgLoading = false;
-      if (currentScene === index) showSceneImage(index);
-    } catch (err) {
-      console.warn('Image ' + index + ' failed:', err.message);
-      scenes[index].imgLoading = false;
+      try {
+        const dataUrl = await generateImage(scenes[index].image_prompt);
+        scenes[index].dataUrl = dataUrl;
+        scenes[index].imgLoading = false;
+        if (currentScene === index) showSceneImage(index);
+      } catch (err) {
+        console.warn('Image ' + index + ' failed:', err.message);
+        scenes[index].imgLoading = false;
+        scenes[index].imgFailed = true;
+        if (currentScene === index) showImageError(err.message);
+      }
+      }
     }
+  } finally {
+    imageQueueRunning = false;
   }
-  imageQueueRunning = false;
 }
 
 // ═══════════════════════════════════════════════════════════
 // CINEMATIC ENGINE
 // ═══════════════════════════════════════════════════════════
+function showImageError(errMsg) {
+  const isCN = currentLang === 'zh';
+  let text;
+  if (errMsg.includes('429')) {
+    text = isCN ? '🌙 画师太忙了，这幅画跳过了' : '🌙 The painter is busy — this scene was skipped';
+  } else if (errMsg.includes('No image')) {
+    text = isCN ? '🌙 这个画面太梦幻了，画不出来' : '🌙 This scene was too dreamy to paint';
+  } else {
+    text = isCN ? '🌙 这幅画迷路了，没能赶到' : '🌙 This painting got lost on the way here';
+  }
+  const textContainer = $('cinema-text');
+  const errEl = document.createElement('p');
+  errEl.className = 'scene-line visible';
+  errEl.style.cssText = 'color:rgba(232,224,212,.35);font-size:.76rem;font-style:italic;margin-bottom:8px;';
+  errEl.textContent = text;
+  textContainer.prepend(errEl);
+}
+
 function showSceneImage(index) {
   const scene = scenes[index];
   if (!scene?.dataUrl) return;
