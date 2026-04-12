@@ -236,7 +236,7 @@ async function generateStory(dreamText) {
 
 {
   "title": "short evocative title (match user's language)",
-  "visual_thread": "ENGLISH: the shared visual identity across ALL scenes. Must include: (1) specific color palette (e.g. 'dusty teal, ochre, faded rose'), (2) light quality and time of day, (3) one recurring visual motif that appears in every scene (e.g. 'golden dust particles floating', 'soft mist at ground level', 'warm lamp glow from unseen source'). Keep it to one concise sentence.",
+  "visual_thread": "One concise English sentence describing the shared atmosphere: color palette, light quality, and one recurring visual motif. Example: 'dusty teal and ochre palette, golden hour light, floating dust particles in every scene'",
   "scenes": [
     {
       "lines": ["first-person sentence 1", "sentence 2", "sentence 3"],
