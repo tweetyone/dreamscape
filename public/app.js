@@ -781,71 +781,212 @@ const POSTER_THEMES = {
 };
 
 // Draw theme-specific decorations on poster
-function drawDecoration(ctx, theme, W, H, x, y, w, h) {
+function drawDecoration(ctx, theme, W, H, x) {
+  if (x !== -1) return; // only draw on full-canvas pass
   ctx.save();
   switch(theme.decoration) {
-    case 'inkwash':
-      // Red seal/chop in top-right corner
+    case 'watercolor': {
+      // Soft watercolor splash circles at edges
+      const splash = (cx, cy, r, color, alpha) => {
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        g.addColorStop(0, `rgba(${color},${alpha})`);
+        g.addColorStop(0.5, `rgba(${color},${alpha * 0.4})`);
+        g.addColorStop(1, `rgba(${color},0)`);
+        ctx.fillStyle = g;
+        ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+      };
+      splash(0, 0, 300, '200,170,120', 0.15);
+      splash(W, H * 0.3, 250, '180,150,190', 0.1);
+      splash(W * 0.3, H, 280, '150,180,170', 0.08);
+      splash(W * 0.7, 0, 200, '210,180,140', 0.12);
+      // Thin decorative border
+      ctx.strokeStyle = 'rgba(180,150,100,.12)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(30, 30, W - 60, H - 60);
+      break;
+    }
+    case 'dreamcore': {
+      // Multiple glow orbs with different colors
+      const orb = (cx, cy, r, color) => {
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        g.addColorStop(0, color);
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+      };
+      orb(60, 60, 200, 'rgba(200,140,255,.25)');
+      orb(W - 80, H * 0.4, 250, 'rgba(140,180,255,.15)');
+      orb(W * 0.5, H - 100, 220, 'rgba(255,140,200,.12)');
+      orb(W - 40, 120, 150, 'rgba(180,255,220,.1)');
+      // Starfield dots
+      for (let i = 0; i < 40; i++) {
+        const sx = Math.random() * W, sy = Math.random() * H;
+        const sr = 0.5 + Math.random() * 1.5;
+        ctx.fillStyle = `rgba(255,255,255,${0.05 + Math.random() * 0.15})`;
+        ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+      }
+      break;
+    }
+    case 'inkwash': {
+      // Red seal/chop
       ctx.fillStyle = theme.accent;
-      ctx.fillRect(W - 140, 40, 52, 52);
+      ctx.fillRect(W - 140, 44, 52, 52);
       ctx.fillStyle = theme.bg[0];
-      ctx.font = 'bold 22px "Ma Shan Zheng", serif';
+      ctx.font = 'bold 24px "Noto Serif SC", serif';
       ctx.textAlign = 'center';
-      ctx.fillText('梦', W - 114, 72);
+      ctx.fillText('梦', W - 114, 78);
+      // Ink splash corners
+      const inkSplash = (cx, cy, r) => {
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        g.addColorStop(0, 'rgba(0,0,0,.06)');
+        g.addColorStop(0.6, 'rgba(0,0,0,.02)');
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+      };
+      inkSplash(0, H, 300);
+      inkSplash(W, 0, 250);
+      // Thin border
+      ctx.strokeStyle = 'rgba(0,0,0,.08)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(24, 24, W - 48, H - 48);
+      ctx.strokeStyle = 'rgba(0,0,0,.04)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(28, 28, W - 56, H - 56);
       break;
-    case 'cyberpunk':
-      // Horizontal scan lines across whole poster (drawn once for whole canvas)
-      if (x === -1) {
-        ctx.fillStyle = 'rgba(0,240,255,.03)';
-        for (let i = 0; i < H; i += 4) ctx.fillRect(0, i, W, 1);
-        // Corner brackets
-        ctx.strokeStyle = theme.accent;
-        ctx.lineWidth = 2;
-        const bs = 30;
-        [[40,40],[W-40-bs,40],[40,H-40-bs],[W-40-bs,H-40-bs]].forEach((p, idx) => {
-          ctx.beginPath();
-          if (idx === 0) { ctx.moveTo(p[0], p[1]+bs); ctx.lineTo(p[0], p[1]); ctx.lineTo(p[0]+bs, p[1]); }
-          if (idx === 1) { ctx.moveTo(p[0], p[1]); ctx.lineTo(p[0]+bs, p[1]); ctx.lineTo(p[0]+bs, p[1]+bs); }
-          if (idx === 2) { ctx.moveTo(p[0], p[1]); ctx.lineTo(p[0], p[1]+bs); ctx.lineTo(p[0]+bs, p[1]+bs); }
-          if (idx === 3) { ctx.moveTo(p[0], p[1]+bs); ctx.lineTo(p[0]+bs, p[1]+bs); ctx.lineTo(p[0]+bs, p[1]); }
-          ctx.stroke();
-        });
+    }
+    case 'pixel': {
+      // Pixel border
+      ctx.fillStyle = theme.accent;
+      const ps = 6; // pixel size
+      for (let i = 0; i < W; i += ps * 2) {
+        ctx.fillRect(i, 0, ps, ps);
+        ctx.fillRect(i, H - ps, ps, ps);
       }
-      break;
-    case 'pixel':
-      // Pixel grid dots at corners
-      if (x === -1) {
-        ctx.fillStyle = theme.accent;
-        for (let i = 0; i < 6; i++) {
-          ctx.fillRect(30 + i*10, 30, 6, 6);
-          ctx.fillRect(W - 30 - (i+1)*10, 30, 6, 6);
-          ctx.fillRect(30 + i*10, H - 36, 6, 6);
-          ctx.fillRect(W - 30 - (i+1)*10, H - 36, 6, 6);
-        }
+      for (let i = 0; i < H; i += ps * 2) {
+        ctx.fillRect(0, i, ps, ps);
+        ctx.fillRect(W - ps, i, ps, ps);
       }
+      // CRT scanlines
+      ctx.fillStyle = 'rgba(139,240,160,.02)';
+      for (let i = 0; i < H; i += 3) ctx.fillRect(0, i, W, 1);
+      // Pixel corners with "DREAM.EXE"
+      ctx.fillStyle = theme.accent;
+      ctx.font = '12px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('> DREAM.EXE', 20, 20);
+      ctx.textAlign = 'right';
+      ctx.fillText('LOADING...OK', W - 20, H - 14);
       break;
-    case 'ukiyoe':
-      // Red corner accents
-      if (x === -1) {
-        ctx.fillStyle = theme.accent;
-        ctx.fillRect(0, 0, W, 4);
-        ctx.fillRect(0, H - 4, W, 4);
+    }
+    case 'ghibli': {
+      // Soft vignette
+      const vig = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.3, W/2, H/2, Math.max(W,H)*0.7);
+      vig.addColorStop(0, 'transparent');
+      vig.addColorStop(1, 'rgba(80,60,30,.08)');
+      ctx.fillStyle = vig;
+      ctx.fillRect(0, 0, W, H);
+      // Leaf/vine decorations at corners
+      ctx.strokeStyle = 'rgba(100,140,60,.15)';
+      ctx.lineWidth = 1.5;
+      // Top-left vine
+      ctx.beginPath();
+      ctx.moveTo(20, 80); ctx.quadraticCurveTo(20, 20, 80, 20);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(24, 60); ctx.quadraticCurveTo(30, 40, 50, 35);
+      ctx.stroke();
+      // Bottom-right vine
+      ctx.beginPath();
+      ctx.moveTo(W - 20, H - 80); ctx.quadraticCurveTo(W - 20, H - 20, W - 80, H - 20);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(W - 24, H - 60); ctx.quadraticCurveTo(W - 30, H - 40, W - 50, H - 35);
+      ctx.stroke();
+      break;
+    }
+    case 'ukiyoe': {
+      // Bold red bands top and bottom
+      ctx.fillStyle = theme.accent;
+      ctx.fillRect(0, 0, W, 6);
+      ctx.fillRect(0, H - 6, W, 6);
+      // Vertical red strips at sides
+      ctx.fillRect(0, 0, 3, H);
+      ctx.fillRect(W - 3, 0, 3, H);
+      // Wave pattern along bottom (simplified)
+      ctx.strokeStyle = 'rgba(200,50,58,.12)';
+      ctx.lineWidth = 1.5;
+      for (let i = 0; i < W; i += 40) {
+        ctx.beginPath();
+        ctx.arc(i + 20, H - 30, 18, Math.PI, 0);
+        ctx.stroke();
       }
+      // Red seal in corner
+      ctx.fillStyle = theme.accent;
+      ctx.fillRect(W - 80, 50, 40, 40);
+      ctx.fillStyle = theme.bg[0];
+      ctx.font = 'bold 20px "Noto Serif SC", serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('夢', W - 60, 78);
       break;
-    case 'dreamcore':
-      // Soft glow orbs in corners
-      if (x === -1) {
-        const orb = (cx, cy, r) => {
-          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-          g.addColorStop(0, 'rgba(212,160,255,.3)');
-          g.addColorStop(1, 'rgba(212,160,255,0)');
-          ctx.fillStyle = g;
-          ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
-        };
-        orb(80, 80, 180);
-        orb(W - 80, H - 80, 200);
+    }
+    case 'cyberpunk': {
+      // Scan lines
+      ctx.fillStyle = 'rgba(0,240,255,.025)';
+      for (let i = 0; i < H; i += 3) ctx.fillRect(0, i, W, 1);
+      // Grid pattern
+      ctx.strokeStyle = 'rgba(255,43,232,.04)';
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i < W; i += 60) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, H); ctx.stroke(); }
+      for (let i = 0; i < H; i += 60) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(W, i); ctx.stroke(); }
+      // Corner brackets
+      ctx.strokeStyle = theme.accent;
+      ctx.lineWidth = 2;
+      const bs = 35;
+      [[30,30],[W-30-bs,30],[30,H-30-bs],[W-30-bs,H-30-bs]].forEach((p, idx) => {
+        ctx.beginPath();
+        if (idx === 0) { ctx.moveTo(p[0], p[1]+bs); ctx.lineTo(p[0], p[1]); ctx.lineTo(p[0]+bs, p[1]); }
+        if (idx === 1) { ctx.moveTo(p[0], p[1]); ctx.lineTo(p[0]+bs, p[1]); ctx.lineTo(p[0]+bs, p[1]+bs); }
+        if (idx === 2) { ctx.moveTo(p[0], p[1]); ctx.lineTo(p[0], p[1]+bs); ctx.lineTo(p[0]+bs, p[1]+bs); }
+        if (idx === 3) { ctx.moveTo(p[0], p[1]+bs); ctx.lineTo(p[0]+bs, p[1]+bs); ctx.lineTo(p[0]+bs, p[1]); }
+        ctx.stroke();
+      });
+      // Neon glow lines
+      ctx.strokeStyle = 'rgba(0,240,255,.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(30, H * 0.15); ctx.lineTo(W - 30, H * 0.15); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,43,232,.1)';
+      ctx.beginPath(); ctx.moveTo(30, H * 0.85); ctx.lineTo(W - 30, H * 0.85); ctx.stroke();
+      break;
+    }
+    case 'clay': {
+      // Rounded double border (like a handmade frame)
+      ctx.strokeStyle = 'rgba(120,80,40,.12)';
+      ctx.lineWidth = 4;
+      if (ctx.roundRect) {
+        ctx.beginPath(); ctx.roundRect(20, 20, W - 40, H - 40, 24); ctx.stroke();
       }
+      ctx.strokeStyle = 'rgba(120,80,40,.06)';
+      ctx.lineWidth = 2;
+      if (ctx.roundRect) {
+        ctx.beginPath(); ctx.roundRect(30, 30, W - 60, H - 60, 18); ctx.stroke();
+      }
+      // Fingerprint texture dots scattered lightly
+      ctx.fillStyle = 'rgba(120,80,40,.03)';
+      for (let i = 0; i < 80; i++) {
+        const cx = 30 + Math.random() * (W - 60);
+        const cy = 30 + Math.random() * (H - 60);
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 3 + Math.random() * 5, 2 + Math.random() * 3, Math.random() * Math.PI, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // "Handmade with ♥" at bottom
+      ctx.fillStyle = 'rgba(120,80,40,.2)';
+      ctx.font = '11px "Cormorant Garamond", serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('handmade with ♥', W / 2, H - 14);
       break;
+    }
   }
   ctx.restore();
 }
@@ -960,9 +1101,6 @@ async function generatePoster() {
   ctx.strokeStyle = theme.divider;
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(W/2, 150); ctx.lineTo(W/2, 168); ctx.stroke();
-
-  // Scene-specific decorations (e.g. red seal for inkwash)
-  drawDecoration(ctx, theme, W, totalH, 0, 0, 0, 0);
 
   // Scenes — single column, image + text below
   let y = TITLE_AREA;
