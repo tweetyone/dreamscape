@@ -105,13 +105,18 @@ function setLoadingProgress(step, detail, pct) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// API: IMAGE GENERATION (Imagen 4.0)
+// API: IMAGE GENERATION
 // ═══════════════════════════════════════════════════════════
-async function generateImage(prompt, retries = 2) {
-  const suffix = STYLE_SUFFIXES[selectedStyle] || STYLE_SUFFIXES.watercolor;
-  const safetyNote = '';
-  const fullPrompt = (visualThread ? visualThread + '. ' : '') + prompt + suffix + safetyNote;
+// Toggle: 'imagen' or 'replicate'
+const IMAGE_PROVIDER = 'replicate';
 
+function buildImagePrompt(prompt) {
+  const suffix = STYLE_SUFFIXES[selectedStyle] || STYLE_SUFFIXES.watercolor;
+  return (visualThread ? visualThread + '. ' : '') + prompt + suffix;
+}
+
+// Imagen 4.0 (Google)
+async function generateImageImagen(fullPrompt, retries = 2) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const resp = await fetch('/api/image', {
@@ -136,6 +141,42 @@ async function generateImage(prompt, retries = 2) {
       await new Promise(r => setTimeout(r, 3000));
     }
   }
+}
+
+// Replicate Flux Schnell
+async function generateImageReplicate(fullPrompt, retries = 2) {
+  const aspectRatio = window.innerWidth > window.innerHeight ? '16:9' : '9:16';
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const resp = await fetch('/api/replicate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: fullPrompt, aspect_ratio: aspectRatio }),
+      });
+      if (resp.status === 429) {
+        await new Promise(r => setTimeout(r, (attempt + 1) * 5000));
+        continue;
+      }
+      if (!resp.ok) throw new Error('Replicate API error: ' + resp.status);
+      const data = await resp.json();
+      // Replicate returns an image URL
+      if (data.url) return data.url;
+      if (data.output?.[0]) return data.output[0];
+      throw new Error('No image in response');
+    } catch (e) {
+      if (attempt === retries) throw e;
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+}
+
+async function generateImage(prompt, retries = 2) {
+  const fullPrompt = buildImagePrompt(prompt);
+  if (IMAGE_PROVIDER === 'replicate') {
+    return generateImageReplicate(fullPrompt, retries);
+  }
+  return generateImageImagen(fullPrompt, retries);
+}
 }
 
 // ═══════════════════════════════════════════════════════════
