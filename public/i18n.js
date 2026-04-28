@@ -136,8 +136,10 @@ function applyLanguage() {
   // Explore button + share link button
   const exploreBtn = document.getElementById('btn-explore');
   if (exploreBtn) exploreBtn.textContent = tx.explore;
-  const shareLinkBtn = document.getElementById('btn-share-link');
-  if (shareLinkBtn) shareLinkBtn.textContent = tx.shareLinkBtn;
+  const sharePublic = document.getElementById('btn-share-public');
+  if (sharePublic) sharePublic.textContent = currentLang === 'zh' ? '分享到画廊' : 'To Gallery';
+  const sharePrivate = document.getElementById('btn-share-private');
+  if (sharePrivate) sharePrivate.textContent = currentLang === 'zh' ? '生成链接' : 'Get Link';
 
   // Language switch button (do this first so it always updates)
   document.getElementById('lang-switch').textContent = tx.langSwitch;

@@ -1289,7 +1289,7 @@ const styleLabelsAll = { watercolor:'水彩', dreamcore:'梦核', inkwash:'水�
 function showBoard() {
   boardOffset = 0;
   $('board-grid').innerHTML = '';
-  $('board-title').textContent = currentLang === 'zh' ? '梦境长廊' : 'Dream Gallery';
+  $('board-title').textContent = currentLang === 'zh' ? '梦境画廊' : 'Dream Gallery';
   $('board-back').textContent = currentLang === 'zh' ? '← 返回' : '← Back';
   $('board-empty').textContent = currentLang === 'zh' ? '还没有人分享梦境…' : 'No dreams shared yet…';
   const loadMoreBtn = $('btn-load-more');
@@ -1618,9 +1618,9 @@ $('btn-tip').addEventListener('click', () => { $('tip-modal').style.display = 'f
 $('tip-close').addEventListener('click', () => { $('tip-modal').style.display = 'none'; });
 $('tip-modal').addEventListener('click', (e) => { if (e.target === $('tip-modal')) $('tip-modal').style.display = 'none'; });
 
-// Share link
-$('btn-share-link').addEventListener('click', async () => {
-  const btn = $('btn-share-link');
+// Share link (public or private)
+async function shareDream(isPublic) {
+  const btn = $(isPublic ? 'btn-share-public' : 'btn-share-private');
   const status = $('share-status');
   btn.disabled = true;
   btn.textContent = currentLang === 'zh' ? '保存中…' : 'Saving…';
@@ -1636,28 +1636,34 @@ $('btn-share-link').addEventListener('click', async () => {
         style: selectedStyle,
         scenes: scenes.map(s => ({ lines: s.lines, dataUrl: s.dataUrl })),
         visualThread,
-        isPublic: true,
+        isPublic,
       }),
     });
     const data = await resp.json();
     if (data.error) throw new Error(data.error);
 
     const shareUrl = window.location.origin + '/d/' + data.id;
-
-    // Copy to clipboard
     try { await navigator.clipboard.writeText(shareUrl); } catch {}
 
+    const publicNote = isPublic
+      ? (currentLang === 'zh' ? '（已公开到梦境画廊）' : '(visible in Dream Gallery)')
+      : (currentLang === 'zh' ? '（仅有链接可查看）' : '(link only, not public)');
+
     status.innerHTML = (currentLang === 'zh'
-      ? `✨ 链接已复制！<a href="${shareUrl}" target="_blank" style="color:rgba(232,224,212,.7);text-decoration:underline;">${shareUrl}</a>`
-      : `✨ Link copied! <a href="${shareUrl}" target="_blank" style="color:rgba(232,224,212,.7);text-decoration:underline;">${shareUrl}</a>`
+      ? `✨ 链接已复制！${publicNote}<br><a href="${shareUrl}" target="_blank" style="color:rgba(232,224,212,.7);text-decoration:underline;">${shareUrl}</a>`
+      : `✨ Link copied! ${publicNote}<br><a href="${shareUrl}" target="_blank" style="color:rgba(232,224,212,.7);text-decoration:underline;">${shareUrl}</a>`
     );
   } catch (e) {
     status.textContent = (currentLang === 'zh' ? '保存失败：' : 'Save failed: ') + e.message;
   } finally {
     btn.disabled = false;
-    btn.textContent = currentLang === 'zh' ? '分享链接 · SHARE' : 'Share Link';
+    btn.textContent = isPublic
+      ? (currentLang === 'zh' ? '分享到画廊' : 'To Gallery')
+      : (currentLang === 'zh' ? '生成链接' : 'Get Link');
   }
-});
+}
+$('btn-share-public').addEventListener('click', () => shareDream(true));
+$('btn-share-private').addEventListener('click', () => shareDream(false));
 
 // Loading back button
 $('loading-back-btn').addEventListener('click', () => { showPhase('input-phase'); });
