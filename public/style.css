@@ -31,7 +31,7 @@ body {
 
 /* ═══════ INPUT PHASE — David Whyte inspired ═══════ */
 #input-phase {
-  min-height:100vh; align-items:center; justify-content:center;
+  min-height:100dvh; align-items:center; justify-content:center;
   flex-direction:column; padding:40px 20px; position:relative; overflow:hidden;
   background:linear-gradient(180deg, #edeae4 0%, #e4e0d8 40%, #ddd8cf 100%);
 }
@@ -222,7 +222,7 @@ html[lang="zh"] #input-phase h1 {
 
 /* ═══════ LOADING PHASE ═══════ */
 #loading-phase {
-  min-height:100vh; align-items:center; justify-content:center;
+  min-height:100dvh; align-items:center; justify-content:center;
   flex-direction:column; gap:32px; position:relative; overflow:hidden;
   background:linear-gradient(180deg, #edeae4 0%, #e4e0d8 40%, #ddd8cf 100%);
 }
@@ -338,7 +338,7 @@ html[lang="zh"] #end-title {
 /* ═══════ RESPONSIVE ═══════ */
 @media (max-width: 600px) {
   /* Input phase */
-  #input-phase { padding:20px 16px; }
+  #input-phase { padding:20px 16px; padding-top:max(20px, env(safe-area-inset-top)); padding-bottom:max(20px, env(safe-area-inset-bottom)); }
   #input-phase .container { max-width:100%; }
   #input-phase h1 { font-size:clamp(2rem,8vw,2.8rem); letter-spacing:.08em; }
   #input-phase .subtitle { font-size:.72rem; letter-spacing:.25em; }
