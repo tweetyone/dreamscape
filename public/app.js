@@ -472,24 +472,24 @@ function brushReveal(onComplete) {
 
   function animate(now) {
     const rawProgress = Math.min(1, (now - startTime) / duration);
+
+    // Redraw fresh each frame: solid black, then erase with wash strokes
+    brushCtx.globalAlpha = 1;
+    brushCtx.fillStyle = '#0a0a08';
+    brushCtx.fillRect(0, 0, W, H);
     drawWashFrame(paths, rawProgress);
 
-    if (rawProgress > 0.7) {
-      const fade = easeInOut((rawProgress - 0.7) / 0.3);
-      brushCtx.clearRect(0, 0, W, H);
-      if (fade < 1) {
-        brushCtx.globalAlpha = 1 - fade;
-        brushCtx.fillStyle = '#0a0a08';
-        brushCtx.fillRect(0, 0, W, H);
-        drawWashFrame(paths, rawProgress);
-        brushCtx.globalAlpha = 1;
-      }
+    // After 75%, fade out the entire remaining canvas
+    if (rawProgress > 0.75) {
+      const fade = (rawProgress - 0.75) / 0.25;
+      brushCanvas.style.opacity = 1 - fade;
     }
 
     if (rawProgress < 1) {
       brushAnimId = requestAnimationFrame(animate);
     } else {
       brushCtx.clearRect(0, 0, W, H);
+      brushCanvas.style.opacity = 1;
       if (onComplete) onComplete();
     }
   }
