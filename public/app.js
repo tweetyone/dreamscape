@@ -576,10 +576,19 @@ function showSceneImage(index) {
   const scene = scenes[index];
   if (!scene?.dataUrl) return;
 
+  const imgUrl = 'url(' + scene.dataUrl + ')';
   const showLayer = $(useLayerA ? 'cinema-img-a' : 'cinema-img-b');
   const hideLayer = $(useLayerA ? 'cinema-img-b' : 'cinema-img-a');
+  const showBg = $(useLayerA ? 'cinema-bg-a' : 'cinema-bg-b');
+  const hideBg = $(useLayerA ? 'cinema-bg-b' : 'cinema-bg-a');
 
-  showLayer.style.backgroundImage = 'url(' + scene.dataUrl + ')';
+  // Blurred background fill
+  showBg.style.backgroundImage = imgUrl;
+  showBg.style.opacity = '1';
+  hideBg.style.opacity = '0';
+
+  // Main image (contain)
+  showLayer.style.backgroundImage = imgUrl;
   showLayer.style.transform = 'scale(1.02)';
   showLayer.style.opacity = '0.85';
   requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -600,6 +609,8 @@ function startCinematic() {
   $('cinema-end').style.display = 'none';
   $('cinema-img-a').style.opacity = '0';
   $('cinema-img-b').style.opacity = '0';
+  $('cinema-bg-a').style.opacity = '0';
+  $('cinema-bg-b').style.opacity = '0';
   useLayerA = true;
 
   const dotsContainer = $('progress-dots');
@@ -663,9 +674,15 @@ function playScene(index) {
       setTimeout(() => {
         const scene = scenes[index];
         if (scene.dataUrl) {
+          const imgUrl = 'url(' + scene.dataUrl + ')';
           const showLayer = $(useLayerA ? 'cinema-img-a' : 'cinema-img-b');
           const hideLayer = $(useLayerA ? 'cinema-img-b' : 'cinema-img-a');
-          showLayer.style.backgroundImage = 'url(' + scene.dataUrl + ')';
+          const showBg = $(useLayerA ? 'cinema-bg-a' : 'cinema-bg-b');
+          const hideBg = $(useLayerA ? 'cinema-bg-b' : 'cinema-bg-a');
+          showBg.style.backgroundImage = imgUrl;
+          showBg.style.opacity = '1';
+          hideBg.style.opacity = '0';
+          showLayer.style.backgroundImage = imgUrl;
           showLayer.style.transform = 'scale(1.02)';
           showLayer.style.opacity = '0.85';
           requestAnimationFrame(() => requestAnimationFrame(() => {

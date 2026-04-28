@@ -100,8 +100,12 @@
   <!-- CINEMATIC PHASE -->
   <div id="cinematic-phase" class="phase" style="min-height:100vh;flex-direction:column;position:relative;background:#0a0a08;">
     <div id="cinema-screen" style="position:fixed;inset:0;overflow:hidden;">
-      <div id="cinema-img-a" style="position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 2s ease,transform 10s linear;"></div>
-      <div id="cinema-img-b" style="position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 2s ease,transform 10s linear;"></div>
+      <!-- Blurred background fill (covers edges when image doesn't match screen ratio) -->
+      <div id="cinema-bg-a" style="position:absolute;inset:-20px;background-size:cover;background-position:center;opacity:0;filter:blur(30px) brightness(.6);transition:opacity 2s ease;"></div>
+      <div id="cinema-bg-b" style="position:absolute;inset:-20px;background-size:cover;background-position:center;opacity:0;filter:blur(30px) brightness(.6);transition:opacity 2s ease;"></div>
+      <!-- Main images (contain = full image visible) -->
+      <div id="cinema-img-a" style="position:absolute;inset:0;background-size:contain;background-position:center;background-repeat:no-repeat;opacity:0;transition:opacity 2s ease,transform 10s linear;"></div>
+      <div id="cinema-img-b" style="position:absolute;inset:0;background-size:contain;background-position:center;background-repeat:no-repeat;opacity:0;transition:opacity 2s ease,transform 10s linear;"></div>
       <canvas id="brush-canvas" style="position:absolute;inset:0;z-index:3;pointer-events:none;"></canvas>
       <div id="cinema-transition" style="position:absolute;inset:0;background:#0a0a08;opacity:0;transition:opacity 1.5s ease;z-index:5;pointer-events:none;"></div>
       <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,8,.7) 0%,rgba(10,10,8,.05) 40%,rgba(10,10,8,.1) 100%);z-index:4;"></div>
