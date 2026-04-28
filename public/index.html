@@ -51,6 +51,7 @@
       <div class="btn-row">
         <button id="begin-btn" disabled>入梦 · Dream</button>
       </div>
+      <button id="btn-explore" onclick="showBoard()" style="margin-top:12px;background:none;border:none;color:#9a9088;font-family:'Cormorant Garamond',serif;font-size:.78rem;cursor:pointer;letter-spacing:.08em;transition:color .3s;text-decoration:underline;text-underline-offset:3px;"></button>
       <p class="footer-note">Imagen 4.0 · Gemini AI</p>
     </div>
     <button id="lang-switch" style="position:absolute;top:24px;right:24px;z-index:10;background:rgba(255,255,255,.3);border:1px solid rgba(140,130,110,.15);border-radius:20px;padding:6px 18px;color:#8a8278;font-family:'Cormorant Garamond',serif;font-size:.72rem;letter-spacing:.1em;cursor:pointer;transition:all .4s;backdrop-filter:blur(4px);" onclick="switchLang()">EN</button>
@@ -78,6 +79,21 @@
       </div>
       <p id="loading-step" style="font-family:'Cormorant Garamond',serif;font-size:1.15rem;color:#5a4838;letter-spacing:.12em;">坠入梦境…</p>
       <p id="loading-detail" style="font-family:'Cormorant Garamond',serif;font-size:.75rem;color:#9a8a78;font-style:italic;letter-spacing:.15em;margin-top:12px;">falling into the dream…</p>
+    </div>
+  </div>
+
+  <!-- BOARD PHASE -->
+  <div id="board-phase" class="phase" style="min-height:100vh;flex-direction:column;background:linear-gradient(180deg,#edeae4 0%,#e4e0d8 40%,#ddd8cf 100%);padding:0;">
+    <div style="max-width:900px;width:100%;margin:0 auto;padding:24px 20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <h2 id="board-title" style="font-family:'Ma Shan Zheng','Cormorant Garamond',serif;font-size:1.6rem;color:#3a3a3a;letter-spacing:.08em;"></h2>
+        <button id="board-back" style="background:none;border:1px solid rgba(140,130,110,.2);border-radius:20px;padding:6px 16px;color:#8a8278;font-family:'Cormorant Garamond',serif;font-size:.72rem;cursor:pointer;transition:all .3s;">← </button>
+      </div>
+      <div id="board-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;"></div>
+      <div id="board-load-more" style="text-align:center;margin-top:20px;display:none;">
+        <button id="btn-load-more" class="style-btn" style="padding:10px 28px;"></button>
+      </div>
+      <p id="board-empty" style="display:none;text-align:center;color:#aaa;font-family:'Cormorant Garamond',serif;font-size:.9rem;margin-top:40px;font-style:italic;"></p>
     </div>
   </div>
 
@@ -122,8 +138,10 @@
         <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;">
           <button id="btn-interpret" class="end-btn">解梦 · INTERPRET</button>
           <button id="btn-share" class="end-btn">保存海报 · SAVE</button>
+          <button id="btn-share-link" class="end-btn">分享链接 · SHARE</button>
           <button id="btn-restart" class="end-btn">再做一个梦 · DREAM AGAIN</button>
         </div>
+        <p id="share-status" style="margin-top:10px;font-family:'Cormorant Garamond',serif;font-size:.76rem;color:rgba(232,224,212,.5);display:none;"></p>
         <button id="btn-tip" style="margin-top:16px;background:none;border:none;color:rgba(232,224,212,.45);font-family:'Cormorant Garamond',serif;font-size:.82rem;cursor:pointer;letter-spacing:.08em;transition:color .3s;"></button>
         <a id="bug-report" href="https://github.com/tweetyone/dreamscape/issues" target="_blank" style="display:block;margin-top:10px;color:rgba(232,224,212,.35);font-family:'Cormorant Garamond',serif;font-size:.74rem;letter-spacing:.06em;text-decoration:none;transition:color .3s;"></a>
 

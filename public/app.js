@@ -1093,7 +1093,7 @@ async function generatePoster() {
   // Pre-calculate wrapped lines for height calculation
   const tempCanvas = document.createElement('canvas');
   const tempCtx = tempCanvas.getContext('2d');
-  tempCtx.font = '20px "EB Garamond", "Noto Serif SC", serif';
+  tempCtx.font = '24px "EB Garamond", "Noto Serif SC", serif';
 
   const wrappedScenes = scenes.map(scene => {
     const allWrapped = [];
@@ -1173,7 +1173,7 @@ async function generatePoster() {
     ctx.fillText(String(i+1).padStart(2,'0'), PAD, y);
 
     ctx.fillStyle = theme.textColor;
-    ctx.font = '20px "EB Garamond", "Noto Serif SC", serif';
+    ctx.font = '24px "EB Garamond", "Noto Serif SC", serif';
     const lines = wrappedScenes[i];
     lines.forEach((line, li) => {
       ctx.fillText(line, PAD + 28, y + li * LINE_H);
@@ -1261,6 +1261,137 @@ function generatePlaceholderImage(index) {
 // ═══════════════════════════════════════════════════════════
 // EVENT HANDLERS
 // ═══════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════
+// DREAM BOARD
+// ═══════════════════════════════════════════════════════════
+let boardOffset = 0;
+const BOARD_LIMIT = 20;
+const styleLabelsAll = { watercolor:'水彩', dreamcore:'梦核', inkwash:'水墨', pixel:'像素', ghibli:'吉卜力', ukiyoe:'浮世绘', cyberpunk:'赛博', clay:'黏土' };
+
+function showBoard() {
+  boardOffset = 0;
+  $('board-grid').innerHTML = '';
+  $('board-title').textContent = currentLang === 'zh' ? '梦境长廊' : 'Dream Gallery';
+  $('board-back').textContent = currentLang === 'zh' ? '← 返回' : '← Back';
+  $('board-empty').textContent = currentLang === 'zh' ? '还没有人分享梦境…' : 'No dreams shared yet…';
+  const loadMoreBtn = $('btn-load-more');
+  loadMoreBtn.textContent = currentLang === 'zh' ? '加载更多' : 'Load more';
+  showPhase('board-phase');
+  loadBoardPage();
+}
+
+async function loadBoardPage() {
+  try {
+    const resp = await fetch(`/api/dreams?offset=${boardOffset}&limit=${BOARD_LIMIT}`);
+    const data = await resp.json();
+
+    if (data.dreams.length === 0 && boardOffset === 0) {
+      $('board-empty').style.display = 'block';
+      return;
+    }
+    $('board-empty').style.display = 'none';
+
+    const grid = $('board-grid');
+    data.dreams.forEach(dream => {
+      const card = document.createElement('div');
+      card.className = 'dream-card';
+      card.innerHTML = `
+        ${dream.thumbnailUrl ? `<img src="${dream.thumbnailUrl}" alt="" loading="lazy">` : '<div style="aspect-ratio:16/9;background:rgba(140,130,110,.1);"></div>'}
+        <div class="card-info">
+          <div class="card-title">${dream.title || ''}</div>
+          <div class="card-style">${styleLabelsAll[dream.style] || dream.style}</div>
+        </div>
+      `;
+      card.addEventListener('click', () => {
+        window.location.href = '/d/' + dream.id;
+      });
+      grid.appendChild(card);
+    });
+
+    boardOffset += data.dreams.length;
+    const loadMore = $('board-load-more');
+    loadMore.style.display = data.hasMore ? 'block' : 'none';
+  } catch (e) {
+    console.warn('Failed to load board:', e.message);
+  }
+}
+
+$('board-back').addEventListener('click', () => showPhase('input-phase'));
+$('btn-load-more').addEventListener('click', loadBoardPage);
+
+// ═══════════════════════════════════════════════════════════
+// SHARED DREAM LOADING — detect /d/[id] URL
+// ═══════════════════════════════════════════════════════════
+(async function checkSharedDream() {
+  const match = window.location.pathname.match(/^\/d\/([a-z0-9]+)$/i);
+  if (!match) return;
+
+  const dreamId = match[1];
+  showPhase('loading-phase');
+  currentPct = 0; targetPct = 0;
+  setLoadingProgress(
+    currentLang === 'zh' ? '正在加载梦境…' : 'Loading a dream…', '', 10
+  );
+  startFakeProgress();
+
+  try {
+    const resp = await fetch('/api/dream?id=' + dreamId);
+    if (!resp.ok) throw new Error('Dream not found');
+    const dream = await resp.json();
+
+    dreamTitle = dream.title;
+    selectedStyle = dream.style;
+    visualThread = dream.visualThread || '';
+
+    setLoadingProgress(
+      currentLang === 'zh' ? '梦境浮现中…' : 'The dream emerges…', '', 40
+    );
+
+    // Load scene images from URLs
+    scenes = dream.scenes.map(s => ({
+      lines: s.lines,
+      dataUrl: null,
+      imgLoading: true,
+    }));
+
+    // Load first image
+    if (dream.scenes[0]?.imageUrl) {
+      try {
+        const imgResp = await fetch(dream.scenes[0].imageUrl);
+        const blob = await imgResp.blob();
+        scenes[0].dataUrl = URL.createObjectURL(blob);
+        scenes[0].imgLoading = false;
+      } catch {}
+    }
+
+    setLoadingProgress(
+      currentLang === 'zh' ? '入梦…' : 'Entering the dream…', '', 80
+    );
+    stopFakeProgress();
+    startCinematic();
+
+    // Lazy load remaining images
+    for (let i = 1; i < dream.scenes.length; i++) {
+      if (dream.scenes[i]?.imageUrl) {
+        fetch(dream.scenes[i].imageUrl)
+          .then(r => r.blob())
+          .then(blob => {
+            scenes[i].dataUrl = URL.createObjectURL(blob);
+            scenes[i].imgLoading = false;
+            if (currentScene === i) showSceneImage(i);
+          })
+          .catch(() => { scenes[i].imgLoading = false; });
+      }
+    }
+  } catch (e) {
+    setLoadingProgress(
+      currentLang === 'zh' ? '梦境未找到' : 'Dream not found', '', 0
+    );
+    stopFakeProgress();
+    setTimeout(() => showPhase('input-phase'), 2000);
+  }
+})();
 
 // Rotating placeholders
 let phIdx = 0;
@@ -1469,6 +1600,47 @@ $('debug-reset').addEventListener('click', () => {
 $('btn-tip').addEventListener('click', () => { $('tip-modal').style.display = 'flex'; });
 $('tip-close').addEventListener('click', () => { $('tip-modal').style.display = 'none'; });
 $('tip-modal').addEventListener('click', (e) => { if (e.target === $('tip-modal')) $('tip-modal').style.display = 'none'; });
+
+// Share link
+$('btn-share-link').addEventListener('click', async () => {
+  const btn = $('btn-share-link');
+  const status = $('share-status');
+  btn.disabled = true;
+  btn.textContent = currentLang === 'zh' ? '保存中…' : 'Saving…';
+  status.style.display = 'block';
+  status.textContent = currentLang === 'zh' ? '正在保存梦境…' : 'Saving your dream…';
+
+  try {
+    const resp = await fetch('/api/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: dreamTitle,
+        style: selectedStyle,
+        scenes: scenes.map(s => ({ lines: s.lines, dataUrl: s.dataUrl })),
+        visualThread,
+        isPublic: true,
+      }),
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+
+    const shareUrl = window.location.origin + '/d/' + data.id;
+
+    // Copy to clipboard
+    try { await navigator.clipboard.writeText(shareUrl); } catch {}
+
+    status.innerHTML = (currentLang === 'zh'
+      ? `✨ 链接已复制！<a href="${shareUrl}" target="_blank" style="color:rgba(232,224,212,.7);text-decoration:underline;">${shareUrl}</a>`
+      : `✨ Link copied! <a href="${shareUrl}" target="_blank" style="color:rgba(232,224,212,.7);text-decoration:underline;">${shareUrl}</a>`
+    );
+  } catch (e) {
+    status.textContent = (currentLang === 'zh' ? '保存失败：' : 'Save failed: ') + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = currentLang === 'zh' ? '分享链接 · SHARE' : 'Share Link';
+  }
+});
 
 // Loading back button
 $('loading-back-btn').addEventListener('click', () => { showPhase('input-phase'); });

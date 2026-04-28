@@ -1,0 +1,12 @@
+name = "dreamscape"
+compatibility_date = "2024-01-01"
+
+[vars]
+
+[[kv_namespaces]]
+binding = "DREAMS_KV"
+id = "placeholder_kv_id"
+
+[[r2_buckets]]
+binding = "DREAMS_R2"
+bucket_name = "dreamscape-images"

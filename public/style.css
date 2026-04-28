@@ -243,6 +243,34 @@ html[lang="zh"] #input-phase h1 {
   100% { transform:translateY(-110vh) translateX(40px) scale(1.1); opacity:0; }
 }
 
+/* ═══════ BOARD PHASE ═══════ */
+.dream-card {
+  border-radius:14px; overflow:hidden; cursor:pointer;
+  background:rgba(255,255,255,.4); backdrop-filter:blur(6px);
+  border:1px solid rgba(140,130,110,.1);
+  transition:all .4s cubic-bezier(.4,0,.2,1);
+}
+.dream-card:hover {
+  transform:translateY(-3px);
+  box-shadow:0 8px 28px rgba(0,0,0,.06);
+  border-color:rgba(140,130,110,.2);
+}
+.dream-card img {
+  width:100%; aspect-ratio:16/9; object-fit:cover; display:block;
+}
+.dream-card .card-info {
+  padding:12px 14px;
+}
+.dream-card .card-title {
+  font-family:'Noto Serif SC','Cormorant Garamond',serif;
+  font-size:.88rem; color:#3a3a3a; margin-bottom:6px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.dream-card .card-style {
+  font-family:'Cormorant Garamond',serif;
+  font-size:.66rem; color:#aaa; letter-spacing:.1em;
+}
+
 /* Chinese font overrides — Ma Shan Zheng only for Chinese titles */
 html[lang="zh"] #cinema-title-text,
 html[lang="zh"] #end-title {

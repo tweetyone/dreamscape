@@ -33,6 +33,8 @@ const TEXTS = {
     shareBtn: '保存海报',
     sharingBtn: '生成中…',
     restartBtn: '再做一个梦',
+    shareLinkBtn: '分享链接',
+    explore: '看看别人的梦 ✨',
     bugReport: '遇到 bug？去 GitHub 提交反馈',
     tipBtn: '🧋 作者的 token 快见底了，请作者喝杯奶茶续命',
     tipTitle: '🧋 作者为爱发电中',
@@ -79,6 +81,8 @@ const TEXTS = {
     shareBtn: 'Save Poster',
     sharingBtn: 'Generating…',
     restartBtn: 'Dream Again',
+    shareLinkBtn: 'Share Link',
+    explore: 'Explore others\' dreams ✨',
     bugReport: 'Found a bug? Submit feedback on GitHub',
     tipBtn: '🧋 The author\'s tokens are running low — buy a boba tea to keep the dreams alive',
     tipTitle: '🧋 Powered by love (and tokens)',
@@ -128,6 +132,12 @@ function applyLanguage() {
 
   // Loading phase
   document.getElementById('loading-back-btn').textContent = tx.loadingBack;
+
+  // Explore button + share link button
+  const exploreBtn = document.getElementById('btn-explore');
+  if (exploreBtn) exploreBtn.textContent = tx.explore;
+  const shareLinkBtn = document.getElementById('btn-share-link');
+  if (shareLinkBtn) shareLinkBtn.textContent = tx.shareLinkBtn;
 
   // Language switch button (do this first so it always updates)
   document.getElementById('lang-switch').textContent = tx.langSwitch;
