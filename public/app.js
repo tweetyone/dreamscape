@@ -389,8 +389,8 @@ function localFallback(dreamText) {
 // BRUSH REVEAL ENGINE
 // ═══════════════════════════════════════════════════════════
 function resizeBrushCanvas() {
-  brushCanvas.width = window.innerWidth;
-  brushCanvas.height = window.innerHeight;
+  brushCanvas.width = Math.max(window.innerWidth, document.documentElement.clientWidth, screen.width);
+  brushCanvas.height = Math.max(window.innerHeight, document.documentElement.clientHeight, screen.height);
 }
 window.addEventListener('resize', resizeBrushCanvas);
 resizeBrushCanvas();
@@ -694,11 +694,16 @@ function setupSceneContent(index, container) {
 }
 
 function waitForImage(index) {
-  if (!scenes[index].imgLoading) return;
+  // If already have the image, show it
+  if (scenes[index].dataUrl) { showSceneImage(index); return; }
+  // If not loading and no image, trigger lazy load
+  if (!scenes[index].imgLoading && !scenes[index].dataUrl) lazyLoadImage(index);
+  // Poll until image arrives
   const iv = setInterval(() => {
-    if (!scenes[index].imgLoading) {
+    if (!scenes[index] || currentScene !== index) { clearInterval(iv); return; }
+    if (scenes[index].dataUrl) {
       clearInterval(iv);
-      if (scenes[index].dataUrl) showSceneImage(index);
+      showSceneImage(index);
     }
   }, 500);
 }
